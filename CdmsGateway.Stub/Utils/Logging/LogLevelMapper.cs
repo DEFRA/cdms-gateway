@@ -1,8 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using Serilog.Core;
 using Serilog.Events;
-using System.Diagnostics.CodeAnalysis;
 
-namespace CdmsGateway.Utils.Logging;
+namespace CdmsGateway.Stub.Utils.Logging;
 
 /**
  * Maps log levels from the C# default 'Information' etc to the node style 'info'.
