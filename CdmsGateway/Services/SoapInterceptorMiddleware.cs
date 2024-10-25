@@ -1,17 +1,29 @@
+using CdmsGateway.Services.Routing;
+
 namespace CdmsGateway.Services;
 
-public class SoapInterceptorMiddleware(RequestDelegate next)
+public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter messageRouter)
 {
     public async Task InvokeAsync(HttpContext context)
     {
-        if (context.Request.Method == HttpMethods.Post && context.Request.Path.HasValue)
+        var request = context.Request;
+        if (request.Method == HttpMethods.Post && request.Path.HasValue)
         {
-            context.Request.EnableBuffering();
-
-            var messageBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
-            context.Request.Body.Position = 0;
+            request.EnableBuffering();
+            var messageBody = await new StreamReader(request.Body).ReadToEndAsync();
+            request.Body.Position = 0;
             
             Console.WriteLine(messageBody);
+
+            var routingResult = await messageRouter.Route(request.Path, messageBody);
+            
+            if (routingResult.RouteFound)
+            {
+                Console.WriteLine(routingResult.RoutedSuccessfully ? $"Successfully routed to {routingResult.RouteUrl}" : $"Failed to route to {routingResult.RouteUrl} with response code {routingResult.ResponseCode}");
+                return;
+            }
+
+            Console.WriteLine("Routing failed");
         }
 
         await next(context);

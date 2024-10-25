@@ -7,6 +7,7 @@ using Serilog;
 using Serilog.Core;
 using System.Diagnostics.CodeAnalysis;
 using CdmsGateway.Services;
+using CdmsGateway.Services.Routing;
 
 //-------- Configure the WebApplication builder------------------//
 
@@ -39,8 +40,8 @@ static void ConfigureWebApplication(WebApplicationBuilder builder)
    ConfigureMongoDb(builder);
 
    ConfigureEndpoints(builder);
-   
-   builder.Services.AddMvc(options => options.EnableEndpointRouting = false);
+
+   AddServices(builder);
 
    builder.Services.AddHttpClient();
 
@@ -75,6 +76,13 @@ static void ConfigureMongoDb(WebApplicationBuilder builder)
 static void ConfigureEndpoints(WebApplicationBuilder builder)
 {
    builder.Services.AddHealthChecks();
+}
+
+[ExcludeFromCodeCoverage]
+static void AddServices(WebApplicationBuilder builder)
+{
+   builder.Services.AddSingleton<IMessageRouter, MessageRouter>();
+   builder.Services.AddSingleton<IMessageRoutes, MessageRoutes>();
 }
 
 [ExcludeFromCodeCoverage]
