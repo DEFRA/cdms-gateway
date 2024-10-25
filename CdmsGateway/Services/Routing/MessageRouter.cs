@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Mime;
 using System.Text;
 using CdmsGateway.Utils.Http;
@@ -22,20 +23,13 @@ public class MessageRouter(IHttpClientFactory clientFactory, IMessageRoutes mess
         try
         {
             var response = await _client.PostAsync(routeDefinition.Url, new StringContent(message, Encoding.UTF8, MediaTypeNames.Application.Soap));
-            return new RoutingResult { RouteFound = true, RouteUrl = routeDefinition.Url, RoutedSuccessfully = response.IsSuccessStatusCode, ResponseCode = response.StatusCode.ToString() };
+            var content = await response.Content.ReadAsStringAsync();
+            return new RoutingResult { RouteFound = true, RouteUrl = routeDefinition.Url, RoutedSuccessfully = response.IsSuccessStatusCode, ResponseContent = content, StatusCode = response.StatusCode };
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex);
-            return new RoutingResult { RouteFound = true, RouteUrl = routeDefinition.Url, RoutedSuccessfully = false, ResponseCode = "Error" };
+            return new RoutingResult { RouteFound = true, RouteUrl = routeDefinition.Url, RoutedSuccessfully = false, StatusCode = HttpStatusCode.ServiceUnavailable };
         }
     }
-}
-
-public class RoutingResult
-{
-    public bool RouteFound { get; init; }
-    public bool RoutedSuccessfully { get; init; }
-    public string? RouteUrl { get; init; }
-    public string? ResponseCode { get; init; }
 }
