@@ -4,7 +4,7 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,
-      "applicationUrl": "http://localhost:3092",
+      "applicationUrl": "http://cdms-gateway-stub.localtest.me:3092",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
