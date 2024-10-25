@@ -6,8 +6,10 @@ using FluentValidation;
 using Serilog;
 using Serilog.Core;
 using System.Diagnostics.CodeAnalysis;
+using CdmsGateway.Config;
 using CdmsGateway.Services;
 using CdmsGateway.Services.Routing;
+using Microsoft.Extensions.Options;
 
 //-------- Configure the WebApplication builder------------------//
 
@@ -33,7 +35,10 @@ static void ConfigureWebApplication(WebApplicationBuilder builder)
    builder.Configuration.AddIniFile("Properties/local.env", true);
 
    var logger = ConfigureLogging(builder);
-
+   
+   builder.Services.Configure<RouteConfig>(builder.Configuration.GetSection("Routes"));
+   builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<RouteConfig>>().Value);
+   
    // Load certificates into Trust Store - Note must happen before Mongo and Http client connections
    builder.Services.AddCustomTrustStore(logger);
 

@@ -1,11 +1,11 @@
 namespace CdmsGateway.Services.Routing;
 
-public class RouteDefinition(string? url)
+public record RouteDefinition
 {
-    public static RouteDefinition Empty => new(null) { IsEmpty = true };
+    public static RouteDefinition Empty => new() { IsEmpty = true };
 
-    public string Url => $"{url}{Path}";
+    public string Url { get; init; } = "";
     public string Path { get; init; } = "";
-    public string MediaType { get; init; } = "";
+    public string ContentType { get; init; } = "";
     public bool IsEmpty { get; private init; }
 }
