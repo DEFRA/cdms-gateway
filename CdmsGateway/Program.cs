@@ -1,5 +1,3 @@
-using CdmsGateway.Example.Endpoints;
-using CdmsGateway.Example.Services;
 using CdmsGateway.Utils;
 using CdmsGateway.Utils.Http;
 using CdmsGateway.Utils.Logging;
@@ -8,12 +6,12 @@ using FluentValidation;
 using Serilog;
 using Serilog.Core;
 using System.Diagnostics.CodeAnalysis;
+using CdmsGateway.Services;
 
 //-------- Configure the WebApplication builder------------------//
 
 var app = CreateWebApplication(args);
 await app.RunAsync();
-
 
 [ExcludeFromCodeCoverage]
 static WebApplication CreateWebApplication(string[] args)
@@ -31,6 +29,7 @@ static WebApplication CreateWebApplication(string[] args)
 static void ConfigureWebApplication(WebApplicationBuilder builder)
 {
    builder.Configuration.AddEnvironmentVariables();
+   builder.Configuration.AddIniFile("Properties/local.env", true);
 
    var logger = ConfigureLogging(builder);
 
@@ -40,6 +39,8 @@ static void ConfigureWebApplication(WebApplicationBuilder builder)
    ConfigureMongoDb(builder);
 
    ConfigureEndpoints(builder);
+   
+   builder.Services.AddMvc(options => options.EnableEndpointRouting = false);
 
    builder.Services.AddHttpClient();
 
@@ -73,9 +74,6 @@ static void ConfigureMongoDb(WebApplicationBuilder builder)
 [ExcludeFromCodeCoverage]
 static void ConfigureEndpoints(WebApplicationBuilder builder)
 {
-   // our Example service, remove before deploying!
-   builder.Services.AddSingleton<IExamplePersistence, ExamplePersistence>();
-
    builder.Services.AddHealthChecks();
 }
 
@@ -84,11 +82,9 @@ static WebApplication BuildWebApplication(WebApplicationBuilder builder)
 {
    var app = builder.Build();
 
-   app.UseRouting();
+   app.UseMiddleware<SoapInterceptorMiddleware>();
+   
    app.MapHealthChecks("/health");
-
-   // Example module, remove before deploying!
-   app.UseExampleEndpoints();
 
    return app;
 }
