@@ -14,9 +14,7 @@ public class StubMiddleware(RequestDelegate next)
         var messageBody = await new StreamReader(request.Body).ReadToEndAsync();
         request.Body.Position = 0;
         
-        // Does this need to be written out both here and the Gateway?
-        Console.WriteLine(request.HttpString());
-        Console.WriteLine(messageBody);
+        Console.WriteLine($"{request.Headers["x-correlation-id"]} {request.HttpString()}");
 
         context.Response.StatusCode = (int)HttpStatusCode.OK;
         context.Response.ContentType = MediaTypeNames.Application.Soap;

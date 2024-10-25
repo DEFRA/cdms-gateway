@@ -9,27 +9,28 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
 {
     public async Task InvokeAsync(HttpContext context)
     {
+        var correlationId = Guid.NewGuid().ToString("B");
         var request = context.Request;
         if (request.Method == HttpMethods.Post && request.Path.HasValue)
         {
             var messageBody = await RetrieveMessageBody(request);
 
-            // Does this need to be written out both here and the Stub?
-            Console.WriteLine(request.HttpString());
-            Console.WriteLine(messageBody);
+            // Could this be written in the Stub?
+            Console.WriteLine($"{correlationId} {request.HttpString()}");
+            Console.WriteLine($"{correlationId} {messageBody}");
 
-            var routingResult = await messageRouter.Route(request.Path, messageBody);
+            var routingResult = await messageRouter.Route(request.Path, messageBody, correlationId);
 
             if (routingResult.RouteFound)
             {
                 if (routingResult.RoutedSuccessfully)
                 {
-                    Console.WriteLine(routingResult.ResponseContent);
-                    Console.WriteLine($"Successfully routed to {routingResult.RouteUrl}");
+                    Console.WriteLine($"{correlationId} {routingResult.ResponseContent}");
+                    Console.WriteLine($"{correlationId} Successfully routed to {routingResult.RouteUrl}");
                 }
                 else
                 {
-                    Console.WriteLine($"Failed to route to {routingResult.RouteUrl} with response code {routingResult.StatusCode}");
+                    Console.WriteLine($"{correlationId} Failed to route to {routingResult.RouteUrl} with response code {routingResult.StatusCode}");
                 }
 
                 await CreateResponse(context, routingResult);
@@ -38,7 +39,7 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
             }
         }
 
-        Console.WriteLine("Routing failed");
+        Console.WriteLine($"{correlationId} Routing not supported for [{request.HttpString()}]");
 
         await next(context);
     }
