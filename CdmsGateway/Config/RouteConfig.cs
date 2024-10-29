@@ -3,11 +3,15 @@ namespace CdmsGateway.Config;
 public record RouteConfig
 {
     public required string StubUrl { get; init; }
-    public required SingleRoute[] RealRoutes { get; init; } = [];
+    public required SingleRoute[] Routes { get; init; } = [];
 }
 
 public record SingleRoute
 {
     public required string Path { get; init; }
-    public required string? Url { get; init; }
+    public SelectedRoute? SelectedRoute { get; set; }
+    public string? LegacyUrl { get; init; }
+    public string? NewUrl { get; init; }
 }
+
+public enum SelectedRoute { Stub, Legacy, New };
