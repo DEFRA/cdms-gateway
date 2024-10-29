@@ -18,6 +18,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionFiles", "SolutionFi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CdmsGatewayStub", "..\cdms-gateway-stub\CdmsGatewayStub\CdmsGatewayStub.csproj", "{80C7D035-899A-4400-BA5A-C60694B0D571}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CdmsGatewayStub.Test", "..\cdms-gateway-stub\CdmsGatewayStub.Test\CdmsGatewayStub.Test.csproj", "{2870B456-2CB3-4FAE-90DF-55175043F86A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,5 +41,9 @@ Global
 		{80C7D035-899A-4400-BA5A-C60694B0D571}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{80C7D035-899A-4400-BA5A-C60694B0D571}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{80C7D035-899A-4400-BA5A-C60694B0D571}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2870B456-2CB3-4FAE-90DF-55175043F86A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2870B456-2CB3-4FAE-90DF-55175043F86A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2870B456-2CB3-4FAE-90DF-55175043F86A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2870B456-2CB3-4FAE-90DF-55175043F86A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
