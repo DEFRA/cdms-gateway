@@ -4,13 +4,12 @@ namespace CdmsGateway.Test.Config;
 
 public class EnvironmentTest
 {
-
    [Fact]
    public void IsNotDevModeByDefault()
    {
-      var _builder = WebApplication.CreateBuilder();
+      var builder = WebApplication.CreateBuilder();
 
-      var isDev = CdmsGateway.Config.Environment.IsDevMode(_builder);
+      var isDev = CdmsGateway.Config.Environment.IsDevMode(builder);
 
       Assert.False(isDev);
    }
