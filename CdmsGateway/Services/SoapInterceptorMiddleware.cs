@@ -19,24 +19,24 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
             Console.WriteLine($"{correlationId} {request.HttpString()}");
             Console.WriteLine($"{correlationId} {messageBody}");
 
-            var routingResult = await messageRouter.Route(request.Path, messageBody, correlationId);
-
-            if (routingResult.RouteFound)
-            {
-                if (routingResult.RoutedSuccessfully)
-                {
-                    Console.WriteLine($"{correlationId} {routingResult.ResponseContent}");
-                    Console.WriteLine($"{correlationId} Successfully routed to {routingResult.RouteUrl}");
-                }
-                else
-                {
-                    Console.WriteLine($"{correlationId} Failed to route to {routingResult.RouteUrl} with response code {routingResult.StatusCode}");
-                }
-
-                await CreateResponse(context, routingResult);
-
-                return;
-            }
+            // var routingResult = await messageRouter.Route(request.Path, messageBody, correlationId);
+            //
+            // if (routingResult.RouteFound)
+            // {
+            //     if (routingResult.RoutedSuccessfully)
+            //     {
+            //         Console.WriteLine($"{correlationId} {routingResult.ResponseContent}");
+            //         Console.WriteLine($"{correlationId} Successfully routed to {routingResult.RouteUrl}");
+            //     }
+            //     else
+            //     {
+            //         Console.WriteLine($"{correlationId} Failed to route to {routingResult.RouteUrl} with response code {routingResult.StatusCode}");
+            //     }
+            //
+            //     await CreateResponse(context, routingResult);
+            //
+            //     return;
+            // }
         }
 
         Console.WriteLine($"{correlationId} Routing not supported for [{request.HttpString()}]");
