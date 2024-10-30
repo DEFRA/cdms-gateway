@@ -18,43 +18,34 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
             {
                 var messageBody = await RetrieveMessageBody(request);
 
-                // Could this be written in the Stub?
-                Console.WriteLine($"{correlationId} {request.HttpString()}");
-                Console.WriteLine($"{correlationId} {messageBody}");
                 logger.Information("{CorrelationId} {HttpString}", correlationId, request.HttpString());
                 logger.Information("{CorrelationId} {MessageBody}", correlationId, messageBody);
 
                 var routingResult = await messageRouter.Route(request.Path, messageBody, correlationId);
-            
+
                 if (routingResult.RouteFound)
                 {
                     if (routingResult.RoutedSuccessfully)
                     {
-                        Console.WriteLine($"{correlationId} {routingResult.ResponseContent}");
-                        Console.WriteLine($"{correlationId} Successfully routed to {routingResult.RouteUrl}");
                         logger.Information("{CorrelationId} {RoutingResultResponseContent}", correlationId, routingResult.ResponseContent);
                         logger.Information("{CorrelationId} Successfully routed to {RoutingResultRouteUrl}", correlationId, routingResult.RouteUrl);
                     }
                     else
                     {
-                        Console.WriteLine($"{correlationId} Failed to route to {routingResult.RouteUrl} with response code {routingResult.StatusCode}");
                         logger.Information("{CorrelationId} Failed to route to {RoutingResultRouteUrl} with response code {RoutingResultStatusCode}", correlationId, routingResult.RouteUrl, routingResult.StatusCode);
                     }
-            
+
                     await CreateResponse(context, routingResult);
-            
+
                     return;
                 }
-            }
 
-            Console.WriteLine($"{correlationId} Routing not supported for [{request.HttpString()}]");
-            logger.Information("{CorrelationId} Routing not supported for [{HttpString}]", correlationId, request.HttpString());
+                logger.Information("{CorrelationId} Routing not supported for [{HttpString}]", correlationId, request.HttpString());
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Routing threw an exception {ex}");
             logger.Error(ex, "Routing threw an exception");
-            throw;
         }
 
         await next(context);

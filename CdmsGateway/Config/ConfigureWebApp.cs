@@ -14,7 +14,7 @@ public static class ConfigureWebApp
     public static void AddServices(this WebApplicationBuilder builder, ILogger logger)
     {
         builder.Services.AddSingleton(logger);
-        //builder.ConfigureToType<RouteConfig>("Routes");
+        builder.ConfigureToType<RouteConfig>("Routes");
 
         builder.Services.AddHttpClient();
         builder.Services.AddHttpProxyClient(logger);

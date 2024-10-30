@@ -12,10 +12,10 @@ public class MessageRoutes : IMessageRoutes
     private const string TestPath = "test";
     private readonly IDictionary<string, string> _routes;
 
-    public MessageRoutes()
+    public MessageRoutes(RouteConfig routeConfig)
     {
         //var routeConfig = new RouteConfig { StubUrl = "http://cdms-gateway-stub.localtest.me:3092/", Routes = [new SingleRoute { Path = "alvs-apaffs" }, new SingleRoute { Path = "cds" }, new SingleRoute { Path = "alvs-cds" }] };
-        var routeConfig = new RouteConfig { StubUrl = "https://cdms-gateway-stub.dev.cdp-int.defra.cloud/", Routes = [new SingleRoute { Path = "alvs-apaffs" }, new SingleRoute { Path = "cds" }, new SingleRoute { Path = "alvs-cds" }] };
+        // var routeConfig = new RouteConfig { StubUrl = "https://cdms-gateway-stub.dev.cdp-int.defra.cloud/", Routes = [new SingleRoute { Path = "alvs-apaffs" }, new SingleRoute { Path = "cds" }, new SingleRoute { Path = "alvs-cds" }] };
         var stubUrl = routeConfig.StubUrl.TrimEnd('/');
         _routes = routeConfig.Routes
             .Select(x => new
