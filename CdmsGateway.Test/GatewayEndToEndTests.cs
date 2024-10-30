@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Mime;
 using System.Text;
-using CdmsGateway.Config;
+using CdmsGateway.Services.Routing;
 using CdmsGateway.Test.Utils;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;

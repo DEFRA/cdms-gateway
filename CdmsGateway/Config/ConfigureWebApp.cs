@@ -7,7 +7,7 @@ using FluentValidation;
 
 namespace CdmsGateway.Config;
 
-public static class ConfugreWebApp
+public static class ConfigureWebApp
 {
     [ExcludeFromCodeCoverage]
     public static void AddServices(this WebApplicationBuilder builder, Serilog.ILogger logger)

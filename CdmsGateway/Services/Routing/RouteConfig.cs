@@ -1,4 +1,4 @@
-namespace CdmsGateway.Config;
+namespace CdmsGateway.Services.Routing;
 
 public record RouteConfig
 {
