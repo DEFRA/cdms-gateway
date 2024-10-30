@@ -9,7 +9,7 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
 {
     public async Task InvokeAsync(HttpContext context)
     {
-        var correlationId = Guid.NewGuid().ToString("B");
+        var correlationId = Guid.NewGuid().ToString("N");
         var request = context.Request;
         if (request.Method == HttpMethods.Post && request.Path.HasValue)
         {
