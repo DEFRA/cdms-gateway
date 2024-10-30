@@ -4,18 +4,19 @@ using CdmsGateway.Services.Routing;
 using CdmsGateway.Utils;
 using CdmsGateway.Utils.Http;
 using FluentValidation;
+using ILogger = Serilog.ILogger;
 
 namespace CdmsGateway.Config;
 
 public static class ConfigureWebApp
 {
     [ExcludeFromCodeCoverage]
-    public static void AddServices(this WebApplicationBuilder builder, Serilog.ILogger logger)
+    public static void AddServices(this WebApplicationBuilder builder, ILogger logger)
     {
-        builder.ConfigureToType<RouteConfig>("Routes");
+        builder.Services.AddSingleton(logger);
+        //builder.ConfigureToType<RouteConfig>("Routes");
 
         builder.Services.AddHttpClient();
-        // calls outside the platform should be done using the named 'proxy' http client.
         builder.Services.AddHttpProxyClient(logger);
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();
    
