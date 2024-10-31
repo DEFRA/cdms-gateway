@@ -1,4 +1,3 @@
-using System.Net.Mime;
 using System.Text;
 using CdmsGateway.Services.Routing;
 using CdmsGateway.Utils;
@@ -12,30 +11,29 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
     {
         try
         {
-            var correlationId = Guid.NewGuid().ToString("N");
             var request = context.Request;
+            var messageHeaders = new MessageHeaders(request);
             if (request.Method == HttpMethods.Post && request.Path.HasValue)
             {
                 var messageBody = await RetrieveMessageBody(request);
+                var correlationId = messageHeaders.CorrelationId;
 
-                logger.Information("{CorrelationId} {HttpString}", correlationId, request.HttpString());
-                logger.Information("{CorrelationId} {MessageBody}", correlationId, messageBody);
+                logger.Information("{CorrelationId} {HttpString} {MessageBody}", correlationId, request.HttpString(), messageBody);
 
-                var routingResult = await messageRouter.Route(request.Path, messageBody, correlationId);
+                var routingResult = await messageRouter.Route(request.Path, messageBody, messageHeaders);
 
                 if (routingResult.RouteFound)
                 {
                     if (routingResult.RoutedSuccessfully)
                     {
-                        logger.Information("{CorrelationId} {RoutingResultResponseContent}", correlationId, routingResult.ResponseContent);
-                        logger.Information("{CorrelationId} Successfully routed to {RoutingResultRouteUrl}", correlationId, routingResult.RouteUrl);
+                        logger.Information("{CorrelationId} Successfully routed to {RouteUrl} with content {Content}", correlationId, routingResult.RouteUrl, routingResult.ResponseContent);
                     }
                     else
                     {
-                        logger.Information("{CorrelationId} Failed to route to {RoutingResultRouteUrl} with response code {RoutingResultStatusCode}", correlationId, routingResult.RouteUrl, routingResult.StatusCode);
+                        logger.Information("{CorrelationId} Failed to route to {RouteUrl} with status code {StatusCode}", correlationId, routingResult.RouteUrl, routingResult.StatusCode);
                     }
 
-                    await CreateResponse(context, routingResult);
+                    await CreateResponse(context.Response, routingResult, messageHeaders);
 
                     return;
                 }
@@ -59,11 +57,14 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
         return messageBody;
     }
 
-    private static async Task CreateResponse(HttpContext context, RoutingResult routingResult)
+    private static async Task CreateResponse(HttpResponse response, RoutingResult routingResult, MessageHeaders messageHeaders)
     {
-        context.Response.StatusCode = (int)routingResult.StatusCode;
-        context.Response.ContentType = MediaTypeNames.Application.Soap;
+        response.StatusCode = (int)routingResult.StatusCode;
+        response.ContentType = messageHeaders.ContentType;
+        response.Headers.Authorization = messageHeaders.Authorization;
+        response.Headers.Date = messageHeaders.Date;
+        response.Headers[MessageHeaders.CorrelationIdName] = messageHeaders.CorrelationId;
         if (routingResult.ResponseContent != null)
-            await context.Response.BodyWriter.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(routingResult.ResponseContent)));
+            await response.BodyWriter.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(routingResult.ResponseContent)));
     }
 }

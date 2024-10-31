@@ -1,5 +1,5 @@
 using System.Net;
-using System.Net.Mime;
+using System.Net.Http.Headers;
 using System.Text;
 using CdmsGateway.Utils.Http;
 
@@ -7,12 +7,12 @@ namespace CdmsGateway.Services.Routing;
 
 public interface IMessageRouter
 {
-    Task<RoutingResult> Route(string routePath, string message, string correlationId);
+    Task<RoutingResult> Route(string routePath, string message, MessageHeaders messageHeaders);
 }
 
 public class MessageRouter(IHttpClientFactory clientFactory, IMessageRoutes messageRoutes) : IMessageRouter
 {
-    public async Task<RoutingResult> Route(string routePath, string message, string correlationId)
+    public async Task<RoutingResult> Route(string routePath, string message, MessageHeaders messageHeaders)
     {
         var route = messageRoutes.GetRoute(routePath);
         if (route == default) return new RoutingResult { RouteName = null };
@@ -23,8 +23,11 @@ public class MessageRouter(IHttpClientFactory clientFactory, IMessageRoutes mess
         try
         {
             var client = clientFactory.CreateClient(Proxy.ProxyClient);
-            client.DefaultRequestHeaders.Add("x-correlation-id", correlationId);
-            var response = await client.PostAsync(route.Url, new StringContent(message, Encoding.UTF8, MediaTypeNames.Application.Soap));
+            client.DefaultRequestHeaders.Add("Date", messageHeaders.Date);
+            client.DefaultRequestHeaders.Add(MessageHeaders.CorrelationIdName, messageHeaders.CorrelationId);
+            client.DefaultRequestHeaders.Add("x-correlation-id", messageHeaders.CorrelationId);
+            if (messageHeaders.Authorization != null) client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(messageHeaders.Authorization);
+            var response = await client.PostAsync(route.Url, new StringContent(message, Encoding.UTF8, messageHeaders.ContentType));
             var content = await response.Content.ReadAsStringAsync();
             return routingResult with { RoutedSuccessfully = response.IsSuccessStatusCode, ResponseContent = content, StatusCode = response.StatusCode };
         }
