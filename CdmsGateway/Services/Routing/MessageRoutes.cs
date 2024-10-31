@@ -2,12 +2,12 @@ namespace CdmsGateway.Services.Routing;
 
 public interface IMessageRoutes
 {
-    string? GetRoute(string from);
+    (string Name, string? Url) GetRoute(string routePath);
 }
 
 public class MessageRoutes : IMessageRoutes
 {
-    private const string TestPath = "test";
+    private const string TestName = "test";
     private readonly IDictionary<string, string> _routes;
 
     public MessageRoutes(RouteConfig routeConfig)
@@ -16,7 +16,7 @@ public class MessageRoutes : IMessageRoutes
         _routes = routeConfig.Routes
             .Select(x => new
             {
-                Path = x.Path.Trim('/'), 
+                Name = x.Name.Trim('/'), 
                 Url = x.SelectedRoute switch
                 {
                     SelectedRoute.New => x.NewUrl,
@@ -24,13 +24,19 @@ public class MessageRoutes : IMessageRoutes
                     _ => null
                 } ?? stubUrl
             })
-            .Select(x => x with { Url = $"{x.Url.TrimEnd('/')}/{x.Path.TrimStart('/')}" })
-            .Concat([new { Path = TestPath, Url = $"{stubUrl}/{TestPath}" }])
-            .ToDictionary(x => x.Path.ToLower(), x => x.Url.ToLower());
+            .Select(x => x with { Url = $"{x.Url.TrimEnd('/')}/{x.Name.TrimStart('/')}" })
+            .Concat([new { Name = TestName, Url = $"{stubUrl}/{TestName}" }])
+            .ToDictionary(x => x.Name.ToLower(), x => x.Url.ToLower());
     }
 
-    public string? GetRoute(string from)
+    public (string Name, string? Url) GetRoute(string routePath)
     {
-        return _routes.TryGetValue(from.Trim('/').ToLower(), out var value) ? value : null;
+        var routeParts = routePath.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (routeParts.Length == 0)
+            return default;
+        var routeName = routeParts[0].Trim('/').ToLower();
+
+        var routeUrl = _routes.TryGetValue(routeName, out var value) ? $"{value}/{string.Join('/', routeParts[1..])}" : null;
+        return (routeName, routeUrl);
     }
 }

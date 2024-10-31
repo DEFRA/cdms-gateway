@@ -8,7 +8,7 @@ public record RouteConfig
 
 public record SingleRoute
 {
-    public required string Path { get; init; }
+    public required string Name { get; init; }
     public SelectedRoute? SelectedRoute { get; set; }
     public string? LegacyUrl { get; init; }
     public string? NewUrl { get; init; }

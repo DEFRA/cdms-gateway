@@ -2,8 +2,9 @@ using System.Net;
 
 namespace CdmsGateway.Services.Routing;
 
-public class RoutingResult
+public record RoutingResult
 {
+    public required string? RouteName { get; init; }
     public bool RouteFound { get; init; }
     public bool RoutedSuccessfully { get; init; }
     public string? RouteUrl { get; init; }
