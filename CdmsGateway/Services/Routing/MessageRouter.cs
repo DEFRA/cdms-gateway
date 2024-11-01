@@ -23,7 +23,7 @@ public class MessageRouter(IHttpClientFactory clientFactory, IMessageRoutes mess
         try
         {
             var client = clientFactory.CreateClient(Proxy.ProxyClient);
-            client.DefaultRequestHeaders.Add("Date", messageHeaders.Date);
+            //client.DefaultRequestHeaders.Add("Date", messageHeaders.Date);
             client.DefaultRequestHeaders.Add(MessageHeaders.CorrelationIdName, messageHeaders.CorrelationId);
             client.DefaultRequestHeaders.Add("x-correlation-id", messageHeaders.CorrelationId);
             if (messageHeaders.Authorization != null) client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(messageHeaders.Authorization);
