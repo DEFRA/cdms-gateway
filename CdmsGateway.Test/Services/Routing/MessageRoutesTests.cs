@@ -8,14 +8,14 @@ public class MessageRoutesTests
 {
     [Theory]
     [InlineData(SelectedRoute.Stub, "/alvs-apaffs/sub-path/", "alvs-apaffs", "http://stub/alvs-apaffs/sub-path")]
-    [InlineData(SelectedRoute.Legacy, "/alvs-apaffs/sub-path/", "alvs-apaffs", "http://legacy-alvs-apaffs/alvs-apaffs/sub-path")]
-    [InlineData(SelectedRoute.New, "/alvs-apaffs/sub-path/", "alvs-apaffs", "http://new-alvs-apaffs/alvs-apaffs/sub-path")]
+    [InlineData(SelectedRoute.Legacy, "/alvs-apaffs/sub-path/", "alvs-apaffs", "http://legacy-alvs-apaffs/somewhere/sub-path")]
+    [InlineData(SelectedRoute.New, "/alvs-apaffs/sub-path/", "alvs-apaffs", "http://new-alvs-apaffs/somewhere/sub-path")]
     [InlineData(SelectedRoute.Stub, "/cds/sub-path/", "cds", "http://stub/cds/sub-path")]
-    [InlineData(SelectedRoute.Legacy, "/cds/sub-path/", "cds", "http://legacy-cds/cds/sub-path")]
-    [InlineData(SelectedRoute.New, "/cds/sub-path/", "cds", "http://new-cds/cds/sub-path")]
+    [InlineData(SelectedRoute.Legacy, "/cds/sub-path/", "cds", "http://legacy-cds/somewhere/sub-path")]
+    [InlineData(SelectedRoute.New, "/cds/sub-path/", "cds", "http://new-cds/somewhere/sub-path")]
     [InlineData(SelectedRoute.Stub, "/alvs-cds/sub-path/", "alvs-cds", "http://stub/alvs-cds/sub-path")]
-    [InlineData(SelectedRoute.Legacy, "/alvs-cds/sub-path/", "alvs-cds", "http://legacy-alvs-cds/alvs-cds/sub-path")]
-    [InlineData(SelectedRoute.New, "/alvs-cds/sub-path/", "alvs-cds", "http://new-alvs-cds/alvs-cds/sub-path")]
+    [InlineData(SelectedRoute.Legacy, "/alvs-cds/sub-path/", "alvs-cds", "http://legacy-alvs-cds/somewhere/sub-path")]
+    [InlineData(SelectedRoute.New, "/alvs-cds/sub-path/", "alvs-cds", "http://new-alvs-cds/somewhere/sub-path")]
     [InlineData(SelectedRoute.Stub, "/test/sub-path/", "test", "http://stub/test/sub-path")]
     [InlineData(SelectedRoute.Legacy, "/test/sub-path/", "test", "http://stub/test/sub-path")]
     [InlineData(SelectedRoute.New, "/test/sub-path/", "test", "http://stub/test/sub-path")]
@@ -53,20 +53,20 @@ public class MessageRoutesTests
             new SingleRoute {
                 Name = "alvs-apaffs",
                 SelectedRoute = selectedRoute,
-                LegacyUrl = "http://legacy-alvs-apaffs/",
-                NewUrl = "http://new-alvs-apaffs/"
+                LegacyUrl = "http://legacy-alvs-apaffs/somewhere/",
+                NewUrl = "http://new-alvs-apaffs/somewhere/"
             },
             new SingleRoute {
                 Name = "cds",
                 SelectedRoute = selectedRoute,
-                LegacyUrl = "http://legacy-cds/",
-                NewUrl = "http://new-cds/"
+                LegacyUrl = "http://legacy-cds/somewhere/",
+                NewUrl = "http://new-cds/somewhere/"
             },
             new SingleRoute {
                 Name = "alvs-cds",
                 SelectedRoute = selectedRoute,
-                LegacyUrl = "http://legacy-alvs-cds/",
-                NewUrl = "http://new-alvs-cds/"
+                LegacyUrl = "http://legacy-alvs-cds/somewhere/",
+                NewUrl = "http://new-alvs-cds/somewhere/"
             }
         ]
     });

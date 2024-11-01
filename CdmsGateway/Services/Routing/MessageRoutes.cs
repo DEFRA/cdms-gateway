@@ -17,14 +17,14 @@ public class MessageRoutes : IMessageRoutes
             .Select(x => new
             {
                 Name = x.Name.Trim('/'), 
-                Url = x.SelectedRoute switch
+                Url = (x.SelectedRoute switch
                 {
-                    SelectedRoute.New => x.NewUrl,
-                    SelectedRoute.Legacy => x.LegacyUrl,
-                    _ => null
-                } ?? stubUrl
+                    SelectedRoute.New => x.NewUrl ?? $"{stubUrl}/{x.Name}",
+                    SelectedRoute.Legacy => x.LegacyUrl ?? $"{stubUrl}/{x.Name}",
+                    SelectedRoute.Stub => $"{stubUrl}/{x.Name}",
+                    _ => $"{stubUrl}/{x.Name}"
+                }).TrimEnd('/')
             })
-            .Select(x => x with { Url = $"{x.Url.TrimEnd('/')}/{x.Name.TrimStart('/')}" })
             .Concat([new { Name = TestName, Url = $"{stubUrl}/{TestName}" }])
             .ToDictionary(x => x.Name.ToLower(), x => x.Url.ToLower());
     }
