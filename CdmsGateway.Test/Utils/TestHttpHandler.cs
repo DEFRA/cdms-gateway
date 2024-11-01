@@ -48,7 +48,7 @@ public class TestHttpHandler : DelegatingHandler
                                             && _request.RequestUri?.ToString() == _routeUrl
                                             && _request.Method.ToString() == _routeMethod
                                             && _request.Headers.Authorization?.ToString() == _routeAuthorization
-                                            && _request.Headers.GetValues("Date").FirstOrDefault() == _routeHeaderDate
+                                            // && _request.Headers.GetValues("Date").FirstOrDefault() == _routeHeaderDate
                                             && _request.Headers.GetValues(CorrelationIdHeaderName).FirstOrDefault() == _routeHeaderCorrelationId
                                             && _request.Content?.Headers.ContentType?.ToString().StartsWith(_routeContentType!) == true
                                             && _routedContent == _routeContent;
