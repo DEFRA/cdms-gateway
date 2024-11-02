@@ -6,7 +6,8 @@ namespace CdmsGateway.Services.Routing;
 
 public class MessageData
 {
-    private const string CorrelationIdName = "X-Correlation-ID";
+    private const string CorrelationIdName = "correlation-id";
+    private const string CorrelationIdSoapName = "X-Correlation-ID";
 
     public string CorrelationId { get; }
     public string ContentAsString { get; }
@@ -31,7 +32,7 @@ public class MessageData
         _contentType = RetrieveContentType(request);
         _headers = request.Headers;
         HttpString = $"{_method} {request.Scheme}://{request.Host}{request.Path}{request.QueryString} {request.Protocol} {_contentType}";       
-        CorrelationId = _headers[CorrelationIdName].FirstOrDefault() ?? Guid.NewGuid().ToString("D");
+        CorrelationId = _headers[CorrelationIdSoapName].FirstOrDefault() ?? Guid.NewGuid().ToString("D");
     }
 
     public bool ShouldProcessRequest() => !(_method == HttpMethods.Get && Path == "health");
@@ -41,7 +42,7 @@ public class MessageData
         var request = new HttpRequestMessage(new HttpMethod(_method), routeUrl);
         foreach (var header in _headers.Where(x => !x.Key.StartsWith("Content-"))) 
             request.Headers.Add(header.Key, header.Value.ToArray());
-        request.Headers.Add("correlation-id", CorrelationId);
+        request.Headers.Add(CorrelationIdName, CorrelationId);
         
         request.Content = _contentType == MediaTypeNames.Application.Json 
             ? JsonContent.Create(JsonNode.Parse(ContentAsString)) 
@@ -55,7 +56,7 @@ public class MessageData
         response.StatusCode = (int)routingResult.StatusCode;
         response.ContentType = _contentType;
         response.Headers.Date = (routingResult.ResponseDate ?? DateTimeOffset.Now).ToString("R");
-        response.Headers[CorrelationIdName] = CorrelationId;
+        response.Headers[CorrelationIdSoapName] = CorrelationId;
         if (routingResult.ResponseContent != null)
             await response.BodyWriter.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(routingResult.ResponseContent)));
     }
