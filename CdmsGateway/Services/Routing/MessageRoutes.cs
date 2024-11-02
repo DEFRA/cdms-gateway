@@ -2,7 +2,7 @@ namespace CdmsGateway.Services.Routing;
 
 public interface IMessageRoutes
 {
-    (string Name, string? Url) GetRoute(string routePath);
+    RoutingResult GetRoute(string routePath);
 }
 
 public class MessageRoutes : IMessageRoutes
@@ -29,14 +29,14 @@ public class MessageRoutes : IMessageRoutes
             .ToDictionary(x => x.Name.ToLower(), x => x.Url.ToLower());
     }
 
-    public (string Name, string? Url) GetRoute(string routePath)
+    public RoutingResult GetRoute(string routePath)
     {
         var routeParts = routePath.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (routeParts.Length == 0)
-            return default;
+        if (routeParts.Length == 0) return new RoutingResult();
+        
         var routeName = routeParts[0].Trim('/').ToLower();
-
         var routeUrl = _routes.TryGetValue(routeName, out var value) ? $"{value}/{string.Join('/', routeParts[1..])}" : null;
-        return (routeName, routeUrl);
+
+        return new RoutingResult { RouteFound = true, RouteName = routeName, RouteUrl = routeUrl };
     }
 }

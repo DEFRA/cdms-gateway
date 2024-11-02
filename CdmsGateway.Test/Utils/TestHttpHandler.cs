@@ -10,8 +10,7 @@ public class TestHttpHandler : DelegatingHandler
 
     public TestHttpHandler ExpectRouteUrl(string routeUrl) { _routeUrl = routeUrl; return this; }
     public TestHttpHandler ExpectRouteMethod(string routeMethod) { _routeMethod = routeMethod; return this; }
-    public TestHttpHandler ExpectRouteAuthorization(string routeAuthorization) { _routeAuthorization = routeAuthorization; return this; }
-    public TestHttpHandler ExpectRouteHeaderDate(string routeHeaderDate) { _routeHeaderDate = routeHeaderDate; return this; }
+    public TestHttpHandler ExpectRouteHeaderDate(DateTimeOffset routeHeaderDate) { _routeHeaderDate = routeHeaderDate; return this; }
     public TestHttpHandler ExpectRouteHeaderCorrelationId(string routeHeaderCorrelationId) { _routeHeaderCorrelationId = routeHeaderCorrelationId; return this; }
     public TestHttpHandler ExpectRouteContentType(string routeContentType) { _routeContentType = routeContentType; return this; }
     public TestHttpHandler ExpectRouteContent(string routeContent) { _routeContent = routeContent; return this; }
@@ -21,8 +20,7 @@ public class TestHttpHandler : DelegatingHandler
     private HttpRequestMessage? _request;
     private string? _routeUrl;
     private string? _routeMethod;
-    private string? _routeAuthorization;
-    private string? _routeHeaderDate;
+    private DateTimeOffset? _routeHeaderDate;
     private string? _routeHeaderCorrelationId;
     private string? _routeContentType;
     private string? _routeContent;
@@ -38,7 +36,7 @@ public class TestHttpHandler : DelegatingHandler
         {
             Content = new StringContent(XmlRoutedResponse, Encoding.UTF8, request.Content.Headers.ContentType!)
         };
-        Response.Headers.Date = request.Headers.Date;
+        Response.Headers.Date = DateTimeOffset.UtcNow;
         Response.Headers.Add(CorrelationIdHeaderName, request.Headers.GetValues(CorrelationIdHeaderName));
         
         return Response;
@@ -47,8 +45,7 @@ public class TestHttpHandler : DelegatingHandler
     public bool WasExpectedRequestSent() => _request != null
                                             && _request.RequestUri?.ToString() == _routeUrl
                                             && _request.Method.ToString() == _routeMethod
-                                            && _request.Headers.Authorization?.ToString() == _routeAuthorization
-                                            // && _request.Headers.GetValues("Date").FirstOrDefault() == _routeHeaderDate
+                                            && _request.Headers.Date == _routeHeaderDate
                                             && _request.Headers.GetValues(CorrelationIdHeaderName).FirstOrDefault() == _routeHeaderCorrelationId
                                             && _request.Content?.Headers.ContentType?.ToString().StartsWith(_routeContentType!) == true
                                             && _routedContent == _routeContent;

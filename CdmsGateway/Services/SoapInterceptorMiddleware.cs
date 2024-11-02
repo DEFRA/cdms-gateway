@@ -11,35 +11,33 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
     {
         try
         {
-            var request = context.Request;
-            var messageHeaders = new MessageHeaders(request);
-            if (request.Method == HttpMethods.Post && request.Path.HasValue)
+            var messageData = await MessageData.Create(context.Request);
+            if (messageData.ShouldProcessRequest())
             {
-                var messageBody = await RetrieveMessageBody(request);
-                var correlationId = messageHeaders.CorrelationId;
+                logger.Information("{CorrelationId} {HttpString} {Content}", messageData.CorrelationId, messageData.HttpString, messageData.ContentAsString);
 
-                logger.Information("{CorrelationId} {HttpString} {MessageBody}", correlationId, request.HttpString(), messageBody);
-
-                var routingResult = await messageRouter.Route(request.Path, messageBody, messageHeaders);
+                var routingResult = await messageRouter.Route(messageData);
 
                 if (routingResult.RouteFound)
                 {
                     if (routingResult.RoutedSuccessfully)
                     {
-                        logger.Information("{CorrelationId} Successfully routed to {RouteUrl} with content {Content}", correlationId, routingResult.RouteUrl, routingResult.ResponseContent);
+                        logger.Information("{CorrelationId} Successfully routed to {RouteUrl} with response {StatusCode} {Content}", messageData.CorrelationId, routingResult.RouteUrl, routingResult.StatusCode, routingResult.ResponseContent);
                     }
                     else
                     {
-                        logger.Information("{CorrelationId} Failed to route to {RouteUrl} with status code {StatusCode}", correlationId, routingResult.RouteUrl, routingResult.StatusCode);
+                        logger.Information("{CorrelationId} Failed to route to {RouteUrl} with status code {StatusCode}", messageData.CorrelationId, routingResult.RouteUrl, routingResult.StatusCode);
                     }
 
-                    await CreateResponse(context.Response, routingResult, messageHeaders);
+                    await messageData.PopulateResponse(context.Response, routingResult);
 
                     return;
                 }
 
-                logger.Information("{CorrelationId} Routing not supported for [{HttpString}]", correlationId, request.HttpString());
+                logger.Information("{CorrelationId} Routing not supported for [{HttpString}]", messageData.CorrelationId, messageData.HttpString);
             }
+            
+            logger.Information("{CorrelationId} Pass through request {HttpString}", messageData.CorrelationId, messageData.HttpString);
         }
         catch (Exception ex)
         {
@@ -47,24 +45,5 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
         }
 
         await next(context);
-    }
-
-    private static async Task<string> RetrieveMessageBody(HttpRequest request)
-    {
-        request.EnableBuffering();
-        var messageBody = await new StreamReader(request.Body).ReadToEndAsync();
-        request.Body.Position = 0;
-        return messageBody;
-    }
-
-    private static async Task CreateResponse(HttpResponse response, RoutingResult routingResult, MessageHeaders messageHeaders)
-    {
-        response.StatusCode = (int)routingResult.StatusCode;
-        response.ContentType = messageHeaders.ContentType;
-        response.Headers.Authorization = messageHeaders.Authorization;
-        response.Headers.Date = messageHeaders.Date;
-        response.Headers[MessageHeaders.CorrelationIdName] = messageHeaders.CorrelationId;
-        if (routingResult.ResponseContent != null)
-            await response.BodyWriter.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(routingResult.ResponseContent)));
     }
 }

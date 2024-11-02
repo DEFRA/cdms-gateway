@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text;
 using CdmsGateway.Services.Routing;
@@ -12,19 +11,17 @@ namespace CdmsGateway.Test;
 public class GatewayEndToEndTests : IAsyncDisposable
 {
     private const string XmlContent = "<xml>Content</xml>";
-    private const string HeaderAuthorization = "Bearer";
-    private const string HeaderDate = "Sun, 03 Nov 2024 08:49:37 GMT";
-    private static readonly string HeaderCorrelationId = Guid.NewGuid().ToString("D");
 
+    private readonly string _headerCorrelationId = Guid.NewGuid().ToString("D");
+    private readonly DateTimeOffset _headerDate = DateTimeOffset.UtcNow.AddSeconds(-1).RoundDownToSecond();
     private readonly TestWebServer _testWebServer = TestWebServer.BuildAndRun();
     private readonly HttpClient _httpClient;
 
     public GatewayEndToEndTests()
     {
         _httpClient = _testWebServer.HttpClient;
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(HeaderAuthorization);
-        _httpClient.DefaultRequestHeaders.Add("Date", HeaderDate);
-        _httpClient.DefaultRequestHeaders.Add(TestHttpHandler.CorrelationIdHeaderName, HeaderCorrelationId);
+        _httpClient.DefaultRequestHeaders.Date = _headerDate;
+        _httpClient.DefaultRequestHeaders.Add(TestHttpHandler.CorrelationIdHeaderName, _headerCorrelationId);
     }
 
     public async ValueTask DisposeAsync() => await _testWebServer.DisposeAsync();
@@ -46,8 +43,8 @@ public class GatewayEndToEndTests : IAsyncDisposable
         
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType?.ToString().Should().Be(MediaTypeNames.Application.Xml);
-        response.Headers.GetValues("Date").FirstOrDefault().Should().Be(HeaderDate);
-        response.Headers.GetValues(TestHttpHandler.CorrelationIdHeaderName).FirstOrDefault().Should().Be(HeaderCorrelationId);
+        response.Headers.Date.Should().BeAfter(_headerDate);
+        response.Headers.GetValues(TestHttpHandler.CorrelationIdHeaderName).FirstOrDefault().Should().Be(_headerCorrelationId);
         (await response.Content.ReadAsStringAsync()).Should().Be(TestHttpHandler.XmlRoutedResponse);
     }
 
@@ -57,9 +54,8 @@ public class GatewayEndToEndTests : IAsyncDisposable
         var expectedRoutUrl = _testWebServer.Services.GetRequiredService<RouteConfig>().StubUrl; 
         _testWebServer.TestHttpHandler.ExpectRouteUrl($"{expectedRoutUrl}alvs-apaffs/sub-path")
                                       .ExpectRouteMethod("POST")
-                                      .ExpectRouteAuthorization(HeaderAuthorization)
-                                      .ExpectRouteHeaderDate(HeaderDate)
-                                      .ExpectRouteHeaderCorrelationId(HeaderCorrelationId)
+                                      .ExpectRouteHeaderDate(_headerDate)
+                                      .ExpectRouteHeaderCorrelationId(_headerCorrelationId)
                                       .ExpectRouteContentType(MediaTypeNames.Application.Xml)
                                       .ExpectRouteContent(XmlContent);
 
@@ -67,8 +63,8 @@ public class GatewayEndToEndTests : IAsyncDisposable
 
         _testWebServer.TestHttpHandler.WasExpectedRequestSent().Should().BeTrue();
         _testWebServer.TestHttpHandler.Response?.StatusCode.Should().Be(HttpStatusCode.OK);
-        // _testWebServer.TestHttpHandler.Response?.Headers.GetValues("Date").FirstOrDefault().Should().Be(HeaderDate);
-        _testWebServer.TestHttpHandler.Response?.Headers.GetValues(TestHttpHandler.CorrelationIdHeaderName).FirstOrDefault().Should().Be(HeaderCorrelationId);
+        _testWebServer.TestHttpHandler.Response?.Headers.Date.Should().BeAfter(_headerDate);
+        _testWebServer.TestHttpHandler.Response?.Headers.GetValues(TestHttpHandler.CorrelationIdHeaderName).FirstOrDefault().Should().Be(_headerCorrelationId);
         _testWebServer.TestHttpHandler.Response?.Content.Headers.ContentType?.ToString().Should().StartWith(MediaTypeNames.Application.Xml);
         (await _testWebServer.TestHttpHandler.Response?.Content.ReadAsStringAsync()!).Should().Be(TestHttpHandler.XmlRoutedResponse);
     }

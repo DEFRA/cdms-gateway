@@ -27,8 +27,8 @@ public class MessageRoutesTests
 
         var route = messageRoutes.GetRoute(routedPath);
         
-        route.Name.Should().Be(expectedRouteName);
-        route.Url.Should().Be(expectedRoutePath);
+        route.RouteName.Should().Be(expectedRouteName);
+        route.RouteUrl.Should().Be(expectedRoutePath);
     }
 
     [Theory]
@@ -42,8 +42,8 @@ public class MessageRoutesTests
 
         var route = messageRoutes.GetRoute(routedPath);
 
-        route.Name.Should().Be(expectedRouteName);
-        route.Url.Should().Be(expectedRoutePath);
+        route.RouteName.Should().Be(expectedRouteName);
+        route.RouteUrl.Should().Be(expectedRoutePath);
     }
 
     private static MessageRoutes GetFullyRoutedMessageRoutes(SelectedRoute? selectedRoute) => new(new RouteConfig
