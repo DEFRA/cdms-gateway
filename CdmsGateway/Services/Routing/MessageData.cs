@@ -45,7 +45,7 @@ public class MessageData
         request.Headers.Add(CorrelationIdName, CorrelationId);
         
         request.Content = _contentType == MediaTypeNames.Application.Json 
-            ? JsonContent.Create(JsonNode.Parse(ContentAsString)) 
+            ? JsonContent.Create(JsonNode.Parse(string.IsNullOrWhiteSpace(ContentAsString) ? "{}" : ContentAsString)) 
             : new StringContent(ContentAsString, Encoding.UTF8, _contentType);
 
         return request;
