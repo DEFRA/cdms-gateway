@@ -31,7 +31,7 @@ public class MessageData
         Path = request.Path.HasValue ? request.Path.Value.Trim('/') : string.Empty;
         _contentType = RetrieveContentType(request);
         _headers = request.Headers;
-        HttpString = $"{_method} {request.Scheme}://{request.Host}{request.Path}{request.QueryString} {request.Protocol} {_contentType}";       
+        HttpString = $"{request.Protocol} {_method} {request.Scheme}://{request.Host}{request.Path}{request.QueryString} {_contentType}";       
         CorrelationId = _headers[CorrelationIdSoapName].FirstOrDefault() ?? Guid.NewGuid().ToString("D");
     }
 
