@@ -28,7 +28,7 @@ public class MessageData
     {
         ContentAsString = contentAsString;
         _method = request.Method;
-        Path = request.Path.HasValue ? request.Path.Value.Trim('/').ToLower() : string.Empty;
+        Path = request.Path.HasValue ? request.Path.Value.Trim('/') : string.Empty;
         _contentType = RetrieveContentType(request);
         _headers = request.Headers;
         HttpString = $"{_method} {request.Scheme}://{request.Host}{request.Path}{request.QueryString} {request.Protocol} {_contentType}";       
