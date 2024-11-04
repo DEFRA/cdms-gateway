@@ -7,9 +7,9 @@ namespace CdmsGateway.Test.Services.Routing;
 public class MessageRoutesTests
 {
     [Theory]
-    [InlineData(SelectedRoute.Stub, "/alvs-apaffs/sub-path/", "alvs-apaffs", "http://stub/alvs-apaffs/sub-path")]
-    [InlineData(SelectedRoute.Legacy, "/alvs-apaffs/sub-path/", "alvs-apaffs", "http://legacy-alvs-apaffs/somewhere/sub-path")]
-    [InlineData(SelectedRoute.New, "/alvs-apaffs/sub-path/", "alvs-apaffs", "http://new-alvs-apaffs/somewhere/sub-path")]
+    [InlineData(SelectedRoute.Stub, "/alvs-ipaffs/sub-path/", "alvs-ipaffs", "http://stub/alvs-ipaffs/sub-path")]
+    [InlineData(SelectedRoute.Legacy, "/alvs-ipaffs/sub-path/", "alvs-ipaffs", "http://legacy-alvs-ipaffs/somewhere/sub-path")]
+    [InlineData(SelectedRoute.New, "/alvs-ipaffs/sub-path/", "alvs-ipaffs", "http://new-alvs-ipaffs/somewhere/sub-path")]
     [InlineData(SelectedRoute.Stub, "/cds/sub-path/", "cds", "http://stub/cds/sub-path")]
     [InlineData(SelectedRoute.Legacy, "/cds/sub-path/", "cds", "http://legacy-cds/somewhere/sub-path")]
     [InlineData(SelectedRoute.New, "/cds/sub-path/", "cds", "http://new-cds/somewhere/sub-path")]
@@ -32,10 +32,10 @@ public class MessageRoutesTests
     }
 
     [Theory]
-    [InlineData(SelectedRoute.Stub, "/alvs-apaffs/sub-path/", "alvs-apaffs", "http://stub/alvs-apaffs/sub-path")]
-    [InlineData(SelectedRoute.Legacy, "/alvs-apaffs/sub-path/", "alvs-apaffs", "http://stub/alvs-apaffs/sub-path")]
-    [InlineData(SelectedRoute.New, "/alvs-apaffs/sub-path/", "alvs-apaffs", "http://stub/alvs-apaffs/sub-path")]
-    [InlineData(null, "/alvs-apaffs/sub-path/", "alvs-apaffs", "http://stub/alvs-apaffs/sub-path")]
+    [InlineData(SelectedRoute.Stub, "/alvs-ipaffs/sub-path/", "alvs-ipaffs", "http://stub/alvs-ipaffs/sub-path")]
+    [InlineData(SelectedRoute.Legacy, "/alvs-ipaffs/sub-path/", "alvs-ipaffs", "http://stub/alvs-ipaffs/sub-path")]
+    [InlineData(SelectedRoute.New, "/alvs-ipaffs/sub-path/", "alvs-ipaffs", "http://stub/alvs-ipaffs/sub-path")]
+    [InlineData(null, "/alvs-ipaffs/sub-path/", "alvs-ipaffs", "http://stub/alvs-ipaffs/sub-path")]
     public void When_routing_through_a_routing_table_without_legacy_or_new_routes_Should_reach_stub_route(SelectedRoute? selectedRoute, string routedPath, string expectedRouteName, string? expectedRoutePath)
     {
         var messageRoutes = GetNullRoutedMessageRoutes(selectedRoute);
@@ -51,10 +51,10 @@ public class MessageRoutesTests
         StubUrl = "http://stub/",
         Routes = [
             new SingleRoute {
-                Name = "alvs-apaffs",
+                Name = "alvs-ipaffs",
                 SelectedRoute = selectedRoute,
-                LegacyUrl = "http://legacy-alvs-apaffs/somewhere/",
-                NewUrl = "http://new-alvs-apaffs/somewhere/"
+                LegacyUrl = "http://legacy-alvs-ipaffs/somewhere/",
+                NewUrl = "http://new-alvs-ipaffs/somewhere/"
             },
             new SingleRoute {
                 Name = "cds",
@@ -76,7 +76,7 @@ public class MessageRoutesTests
         StubUrl = "http://stub/",
         Routes = [
             new SingleRoute {
-                Name = "alvs-apaffs",
+                Name = "alvs-ipaffs",
                 SelectedRoute = selectedRoute
             }
         ]

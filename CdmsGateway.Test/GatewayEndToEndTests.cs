@@ -39,7 +39,7 @@ public class GatewayEndToEndTests : IAsyncDisposable
     [Fact]
     public async Task When_routing_request_Should_respond_correctly()
     {
-        var response = await _httpClient.PostAsync("alvs-apaffs/sub-path", new StringContent(XmlContent, Encoding.UTF8, MediaTypeNames.Application.Xml));
+        var response = await _httpClient.PostAsync("alvs-ipaffs/sub-path", new StringContent(XmlContent, Encoding.UTF8, MediaTypeNames.Application.Xml));
         
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType?.ToString().Should().Be(MediaTypeNames.Application.Xml);
@@ -52,14 +52,14 @@ public class GatewayEndToEndTests : IAsyncDisposable
     public async Task When_routing_request_Should_route_correctly()
     {
         var expectedRoutUrl = _testWebServer.Services.GetRequiredService<RouteConfig>().StubUrl; 
-        _testWebServer.TestHttpHandler.ExpectRouteUrl($"{expectedRoutUrl}alvs-apaffs/sub-path")
+        _testWebServer.TestHttpHandler.ExpectRouteUrl($"{expectedRoutUrl}alvs-ipaffs/sub-path")
                                       .ExpectRouteMethod("POST")
                                       .ExpectRouteHeaderDate(_headerDate)
                                       .ExpectRouteHeaderCorrelationId(_headerCorrelationId)
                                       .ExpectRouteContentType(MediaTypeNames.Application.Xml)
                                       .ExpectRouteContent(XmlContent);
 
-        await _httpClient.PostAsync("alvs-apaffs/sub-path", new StringContent(XmlContent, Encoding.UTF8, MediaTypeNames.Application.Xml));
+        await _httpClient.PostAsync("alvs-ipaffs/sub-path", new StringContent(XmlContent, Encoding.UTF8, MediaTypeNames.Application.Xml));
 
         _testWebServer.TestHttpHandler.WasExpectedRequestSent().Should().BeTrue();
         _testWebServer.TestHttpHandler.Response?.StatusCode.Should().Be(HttpStatusCode.OK);
