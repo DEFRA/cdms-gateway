@@ -14,7 +14,6 @@ public class MessageData
     public string HttpString { get; }
     public string Path { get; }
 
-    private readonly string _version;
     private readonly string _method;
     private readonly string _contentType;
     private readonly IHeaderDictionary _headers;
@@ -28,7 +27,6 @@ public class MessageData
     private MessageData(HttpRequest request, string contentAsString)
     {
         ContentAsString = contentAsString;
-        _version = request.Protocol.Split('/')[1];
         _method = request.Method;
         Path = request.Path.HasValue ? request.Path.Value.Trim('/') : string.Empty;
         _contentType = RetrieveContentType(request);
@@ -45,7 +43,6 @@ public class MessageData
         foreach (var header in _headers.Where(x => !x.Key.StartsWith("Content-"))) 
             request.Headers.Add(header.Key, header.Value.ToArray());
         request.Headers.Add(CorrelationIdName, CorrelationId);
-        request.Version = new Version(_version);
         
         request.Content = _contentType == MediaTypeNames.Application.Json 
             ? JsonContent.Create(JsonNode.Parse(string.IsNullOrWhiteSpace(ContentAsString) ? "{}" : ContentAsString)) 
