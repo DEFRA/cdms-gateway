@@ -1,6 +1,4 @@
-using System.Text;
 using CdmsGateway.Services.Routing;
-using CdmsGateway.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace CdmsGateway.Services;
@@ -11,7 +9,7 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
     {
         try
         {
-            var messageData = await MessageData.Create(context.Request);
+            var messageData = await MessageData.Create(context.Request, logger);
             if (messageData.ShouldProcessRequest())
             {
                 logger.Information("{CorrelationId} {HttpString} {Content}", messageData.CorrelationId, messageData.HttpString, messageData.ContentAsString);

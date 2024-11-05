@@ -1,6 +1,7 @@
-using CdmsGateway.Config;
 using CdmsGateway.Services.Routing;
 using FluentAssertions;
+using NSubstitute;
+using Serilog;
 
 namespace CdmsGateway.Test.Services.Routing;
 
@@ -20,13 +21,13 @@ public class MessageRoutesTests
     [InlineData(SelectedRoute.Legacy, "/test/sub-path/", "test", "http://stub/test/sub-path")]
     [InlineData(SelectedRoute.New, "/test/sub-path/", "test", "http://stub/test/sub-path")]
     [InlineData(null, "/test/sub-path/", "test", "http://stub/test/sub-path")]
-    [InlineData(null, "/xyz/sub-path/", "xyz", null)]
-    public void When_routing_through_a_fully_specified_routing_table_Should_reach_correct_route(SelectedRoute? selectedRoute, string routedPath, string expectedRouteName, string? expectedRoutePath)
+    public void When_routing_through_a_fully_specified_routing_table_Should_reach_correct_route(SelectedRoute? selectedRoute, string routedPath, string expectedRouteName, string expectedRoutePath)
     {
         var messageRoutes = GetFullyRoutedMessageRoutes(selectedRoute);
 
         var route = messageRoutes.GetRoute(routedPath);
-        
+
+        route.RouteFound.Should().BeTrue();
         route.RouteName.Should().Be(expectedRouteName);
         route.RouteUrl.Should().Be(expectedRoutePath);
     }
@@ -36,15 +37,30 @@ public class MessageRoutesTests
     [InlineData(SelectedRoute.Legacy, "/alvs-ipaffs/sub-path/", "alvs-ipaffs", "http://stub/alvs-ipaffs/sub-path")]
     [InlineData(SelectedRoute.New, "/alvs-ipaffs/sub-path/", "alvs-ipaffs", "http://stub/alvs-ipaffs/sub-path")]
     [InlineData(null, "/alvs-ipaffs/sub-path/", "alvs-ipaffs", "http://stub/alvs-ipaffs/sub-path")]
-    public void When_routing_through_a_routing_table_without_legacy_or_new_routes_Should_reach_stub_route(SelectedRoute? selectedRoute, string routedPath, string expectedRouteName, string? expectedRoutePath)
+    public void When_routing_through_a_routing_table_without_legacy_or_new_routes_Should_reach_stub_route(SelectedRoute? selectedRoute, string routedPath, string expectedRouteName, string expectedRoutePath)
     {
         var messageRoutes = GetNullRoutedMessageRoutes(selectedRoute);
 
         var route = messageRoutes.GetRoute(routedPath);
 
+        route.RouteFound.Should().BeTrue();
         route.RouteName.Should().Be(expectedRouteName);
         route.RouteUrl.Should().Be(expectedRoutePath);
     }
+
+    [Theory]
+    [InlineData(SelectedRoute.Stub, "/alvs-xyz/sub-path/", "alvs-xyz")]
+    public void When_routing_through_a_routing_table_with_unrecognised_route_type_Should_fail_to_route(SelectedRoute? selectedRoute, string routedPath, string expectedRouteName)
+    {
+        var messageRoutes = GetFullyRoutedMessageRoutes(selectedRoute);
+
+        var route = messageRoutes.GetRoute(routedPath);
+
+        route.RouteFound.Should().BeFalse();
+        route.RouteName.Should().Be(expectedRouteName);
+        route.RouteUrl.Should().BeNull();
+    }
+
 
     private static MessageRoutes GetFullyRoutedMessageRoutes(SelectedRoute? selectedRoute) => new(new RouteConfig
     {
@@ -69,7 +85,7 @@ public class MessageRoutesTests
                 NewUrl = "http://new-alvs-cds/somewhere/"
             }
         ]
-    });
+    }, Substitute.For<ILogger>());
 
     private static MessageRoutes GetNullRoutedMessageRoutes(SelectedRoute? selectedRoute) => new(new RouteConfig
     {
@@ -80,5 +96,5 @@ public class MessageRoutesTests
                 SelectedRoute = selectedRoute
             }
         ]
-    });
+    }, Substitute.For<ILogger>());
 }

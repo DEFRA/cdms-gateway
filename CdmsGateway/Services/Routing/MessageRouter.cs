@@ -1,5 +1,6 @@
 using System.Net;
 using CdmsGateway.Utils.Http;
+using ILogger = Serilog.ILogger;
 
 namespace CdmsGateway.Services.Routing;
 
@@ -8,7 +9,7 @@ public interface IMessageRouter
     Task<RoutingResult> Route(MessageData messageData);
 }
 
-public class MessageRouter(IHttpClientFactory clientFactory, IMessageRoutes messageRoutes) : IMessageRouter
+public class MessageRouter(IHttpClientFactory clientFactory, IMessageRoutes messageRoutes, ILogger logger) : IMessageRouter
 {
     public async Task<RoutingResult> Route(MessageData messageData)
     {
@@ -26,7 +27,7 @@ public class MessageRouter(IHttpClientFactory clientFactory, IMessageRoutes mess
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            logger.Error(ex, "Error routing");
             return routingResult with { StatusCode = HttpStatusCode.ServiceUnavailable };
         }
     }
