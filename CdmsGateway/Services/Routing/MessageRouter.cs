@@ -19,9 +19,8 @@ public class MessageRouter(IHttpClientFactory clientFactory, IMessageRoutes mess
         try
         {
             var client = clientFactory.CreateClient(Proxy.ProxyClient);
-            //var request = messageData.CreateForwardingRequest(routingResult.RouteUrl);
-            //var response = await client.SendAsync(request);
-            var response = await client.GetAsync(routingResult.RouteUrl);
+            var request = messageData.CreateForwardingRequest(routingResult.RouteUrl);
+            var response = await client.SendAsync(request);
             
             var content = await response.Content.ReadAsStringAsync();
             return routingResult with { RoutedSuccessfully = response.IsSuccessStatusCode, ResponseContent = content, StatusCode = response.StatusCode, ResponseDate = response.Headers.Date };
