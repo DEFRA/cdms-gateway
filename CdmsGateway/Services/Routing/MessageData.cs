@@ -53,8 +53,11 @@ public class MessageData
         try
         {
             var request = new HttpRequestMessage(new HttpMethod(_method), routeUrl);
+            foreach (var header in _headers.SelectMany(x => x.Value.ToArray(), (x, y) => new { x.Key, Value = y})) 
+                _logger.Information("HEADER: {Key}={Value}", header.Key, header.Value);
             // foreach (var header in _headers.Where(x => !x.Key.StartsWith("Content-"))) 
             //     request.Headers.Add(header.Key, header.Value.ToArray());
+            request.Headers.Add(CorrelationIdSoapName, CorrelationId);
             request.Headers.Add(CorrelationIdName, CorrelationId);
         
             request.Content = _contentType == MediaTypeNames.Application.Json 
