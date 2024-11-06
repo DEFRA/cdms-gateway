@@ -22,8 +22,6 @@ public class MessageRouter(IHttpClientFactory clientFactory, IMessageRoutes mess
             var request = messageData.CreateForwardingRequest(routingResult.RouteUrl);
             var response = await client.SendAsync(request);
             
-            foreach (var header in response.Headers.SelectMany(x => x.Value.ToArray(), (x, y) => new { x.Key, Value = y})) 
-                logger.Information("RES-HEADER: {Key}={Value}", header.Key, header.Value);
             var content = await response.Content.ReadAsStringAsync();
             return routingResult with { RoutedSuccessfully = response.IsSuccessStatusCode, ResponseContent = content, StatusCode = response.StatusCode, ResponseDate = response.Headers.Date };
         }

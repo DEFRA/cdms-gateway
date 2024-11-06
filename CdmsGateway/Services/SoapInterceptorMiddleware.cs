@@ -12,7 +12,7 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
             var messageData = await MessageData.Create(context.Request, logger);
             if (messageData.ShouldProcessRequest())
             {
-                logger.Information("{CorrelationId} {HttpString} {Content}", messageData.CorrelationId, messageData.HttpString, messageData.ContentAsString);
+                // logger.Information("{CorrelationId} {HttpString} {Content}", messageData.CorrelationId, messageData.HttpString, messageData.ContentAsString);
 
                 var routingResult = await messageRouter.Route(messageData);
 
