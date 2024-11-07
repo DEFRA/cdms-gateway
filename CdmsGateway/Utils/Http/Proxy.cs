@@ -16,12 +16,9 @@ public static class Proxy
     *     `clientFactory.CreateClient(Proxy.ProxyClient);`
     */
    [ExcludeFromCodeCoverage]
-   public static void AddHttpProxyClient(this IServiceCollection services, Serilog.ILogger logger)
+   public static IHttpClientBuilder AddHttpProxyClient(this IServiceCollection services, Serilog.ILogger logger)
    {
-      services.AddHttpClient(ProxyClient).ConfigurePrimaryHttpMessageHandler(() =>
-      {
-         return ConfigurePrimaryHttpMessageHandler(logger);
-      });
+      return services.AddHttpClient(ProxyClient).ConfigurePrimaryHttpMessageHandler(() => ConfigurePrimaryHttpMessageHandler(logger));
    }
 
    [ExcludeFromCodeCoverage]

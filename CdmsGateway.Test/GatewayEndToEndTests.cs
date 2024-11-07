@@ -19,7 +19,7 @@ public class GatewayEndToEndTests : IAsyncDisposable
 
     public GatewayEndToEndTests()
     {
-        _httpClient = _testWebServer.HttpClient;
+        _httpClient = _testWebServer.HttpServiceClient;
         _httpClient.DefaultRequestHeaders.Date = _headerDate;
         _httpClient.DefaultRequestHeaders.Add(TestHttpHandler.CorrelationIdHeaderName, _headerCorrelationId);
     }
@@ -27,7 +27,7 @@ public class GatewayEndToEndTests : IAsyncDisposable
     public async ValueTask DisposeAsync() => await _testWebServer.DisposeAsync();
 
     [Fact]
-    public async Task When_checking_service_health_Should_be_healthy()
+    public async Task When_checking_service_health_Then_should_be_healthy()
     {
         var response = await _httpClient.GetAsync("health");
         
@@ -37,7 +37,7 @@ public class GatewayEndToEndTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task When_routing_request_Should_respond_correctly()
+    public async Task When_routing_request_Then_should_respond_correctly()
     {
         var response = await _httpClient.PostAsync("alvs-ipaffs/sub-path", new StringContent(XmlContent, Encoding.UTF8, MediaTypeNames.Application.Xml));
         
@@ -49,10 +49,10 @@ public class GatewayEndToEndTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task When_routing_request_Should_route_correctly()
+    public async Task When_routing_request_Then_should_route_correctly()
     {
         var expectedRoutUrl = _testWebServer.Services.GetRequiredService<RouteConfig>().StubUrl; 
-        _testWebServer.TestHttpHandler.ExpectRouteUrl($"{expectedRoutUrl}alvs-ipaffs/sub-path")
+        _testWebServer.OutboundTestHttpHandler.ExpectRouteUrl($"{expectedRoutUrl}alvs-ipaffs/sub-path")
                                       .ExpectRouteMethod("POST")
                                       .ExpectRouteHeaderDate(_headerDate)
                                       .ExpectRouteHeaderCorrelationId(_headerCorrelationId)
@@ -61,11 +61,23 @@ public class GatewayEndToEndTests : IAsyncDisposable
 
         await _httpClient.PostAsync("alvs-ipaffs/sub-path", new StringContent(XmlContent, Encoding.UTF8, MediaTypeNames.Application.Xml));
 
-        _testWebServer.TestHttpHandler.WasExpectedRequestSent().Should().BeTrue();
-        _testWebServer.TestHttpHandler.Response?.StatusCode.Should().Be(HttpStatusCode.OK);
-        _testWebServer.TestHttpHandler.Response?.Headers.Date.Should().BeAfter(_headerDate);
-        _testWebServer.TestHttpHandler.Response?.Headers.GetValues(TestHttpHandler.CorrelationIdHeaderName).FirstOrDefault().Should().Be(_headerCorrelationId);
-        _testWebServer.TestHttpHandler.Response?.Content.Headers.ContentType?.ToString().Should().StartWith(MediaTypeNames.Application.Xml);
-        (await _testWebServer.TestHttpHandler.Response?.Content.ReadAsStringAsync()!).Should().Be(TestHttpHandler.XmlRoutedResponse);
+        _testWebServer.OutboundTestHttpHandler.WasExpectedRequestSent().Should().BeTrue();
+        _testWebServer.OutboundTestHttpHandler.Response?.StatusCode.Should().Be(HttpStatusCode.OK);
+        _testWebServer.OutboundTestHttpHandler.Response?.Headers.Date.Should().BeAfter(_headerDate);
+        _testWebServer.OutboundTestHttpHandler.Response?.Headers.GetValues(TestHttpHandler.CorrelationIdHeaderName).FirstOrDefault().Should().Be(_headerCorrelationId);
+        _testWebServer.OutboundTestHttpHandler.Response?.Content.Headers.ContentType?.ToString().Should().StartWith(MediaTypeNames.Application.Xml);
+        (await _testWebServer.OutboundTestHttpHandler.Response?.Content.ReadAsStringAsync()!).Should().Be(TestHttpHandler.XmlRoutedResponse);
+    }
+
+    [Fact]
+    public async Task When_routed_request_returns_502_Then_should_retry()
+    {
+        var callNum = 0;
+        _testWebServer.OutboundTestHttpHandler.ShouldErrorWithStatus(() => ++callNum == 1 ? HttpStatusCode.BadGateway : HttpStatusCode.OK);
+        
+        var response = await _httpClient.PostAsync("alvs-ipaffs/sub-path", new StringContent(XmlContent, Encoding.UTF8, MediaTypeNames.Application.Xml));
+        
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        callNum.Should().Be(2);
     }
 }

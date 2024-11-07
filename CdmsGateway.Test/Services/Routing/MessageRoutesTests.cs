@@ -21,7 +21,7 @@ public class MessageRoutesTests
     [InlineData(SelectedRoute.Legacy, "/test/sub-path/", "test", "http://stub/test/sub-path")]
     [InlineData(SelectedRoute.New, "/test/sub-path/", "test", "http://stub/test/sub-path")]
     [InlineData(null, "/test/sub-path/", "test", "http://stub/test/sub-path")]
-    public void When_routing_through_a_fully_specified_routing_table_Should_reach_correct_route(SelectedRoute? selectedRoute, string routedPath, string expectedRouteName, string expectedRoutePath)
+    public void When_routing_through_a_fully_specified_routing_table_Then_should_reach_correct_route(SelectedRoute? selectedRoute, string routedPath, string expectedRouteName, string expectedRoutePath)
     {
         var messageRoutes = GetFullyRoutedMessageRoutes(selectedRoute);
 
@@ -37,7 +37,7 @@ public class MessageRoutesTests
     [InlineData(SelectedRoute.Legacy, "/alvs-ipaffs/sub-path/", "alvs-ipaffs", "http://stub/alvs-ipaffs/sub-path")]
     [InlineData(SelectedRoute.New, "/alvs-ipaffs/sub-path/", "alvs-ipaffs", "http://stub/alvs-ipaffs/sub-path")]
     [InlineData(null, "/alvs-ipaffs/sub-path/", "alvs-ipaffs", "http://stub/alvs-ipaffs/sub-path")]
-    public void When_routing_through_a_routing_table_without_legacy_or_new_routes_Should_reach_stub_route(SelectedRoute? selectedRoute, string routedPath, string expectedRouteName, string expectedRoutePath)
+    public void When_routing_through_a_routing_table_without_legacy_or_new_routes_Then_should_reach_stub_route(SelectedRoute? selectedRoute, string routedPath, string expectedRouteName, string expectedRoutePath)
     {
         var messageRoutes = GetNullRoutedMessageRoutes(selectedRoute);
 
@@ -50,7 +50,7 @@ public class MessageRoutesTests
 
     [Theory]
     [InlineData(SelectedRoute.Stub, "/alvs-xyz/sub-path/", "alvs-xyz")]
-    public void When_routing_through_a_routing_table_with_unrecognised_route_type_Should_fail_to_route(SelectedRoute? selectedRoute, string routedPath, string expectedRouteName)
+    public void When_routing_through_a_routing_table_with_unrecognised_route_type_Then_should_fail_to_route(SelectedRoute? selectedRoute, string routedPath, string expectedRouteName)
     {
         var messageRoutes = GetFullyRoutedMessageRoutes(selectedRoute);
 

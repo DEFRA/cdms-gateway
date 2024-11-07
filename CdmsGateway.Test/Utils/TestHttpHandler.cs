@@ -17,6 +17,10 @@ public class TestHttpHandler : DelegatingHandler
 
     public HttpResponseMessage? Response;
 
+    public void ShouldErrorWithStatus(Func<HttpStatusCode> statusCodeFunc) => _responseStatusCodeFunc = statusCodeFunc;
+
+    private Func<HttpStatusCode> _responseStatusCodeFunc = () => HttpStatusCode.OK;
+    
     private HttpRequestMessage? _request;
     private string? _routeUrl;
     private string? _routeMethod;
@@ -28,6 +32,9 @@ public class TestHttpHandler : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        var responseStatusCode = _responseStatusCodeFunc();
+        if (responseStatusCode != HttpStatusCode.OK) return new HttpResponseMessage(responseStatusCode);
+        
         _request = request;
 
         _routedContent = await request.Content?.ReadAsStringAsync(cancellationToken)!;

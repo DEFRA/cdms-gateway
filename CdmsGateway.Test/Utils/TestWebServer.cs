@@ -1,5 +1,4 @@
 using CdmsGateway.Config;
-using CdmsGateway.Utils.Http;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,17 +13,17 @@ public class TestWebServer : IAsyncDisposable
     
     private readonly WebApplication _app;
 
-    public TestHttpHandler TestHttpHandler { get; }
-    public HttpClient HttpClient { get; }
+    public TestHttpHandler OutboundTestHttpHandler { get; }
+    public HttpClient HttpServiceClient { get; }
     public IServiceProvider Services { get; }
 
     public static TestWebServer BuildAndRun(params ServiceDescriptor[] testServices) => new(testServices);
 
     private TestWebServer(params ServiceDescriptor[] testServices)
     {
-        TestHttpHandler = new TestHttpHandler();
+        OutboundTestHttpHandler = new TestHttpHandler();
         var url = $"http://localhost:{_portNumber++}/";
-        HttpClient = new HttpClient { BaseAddress = new Uri(url) };
+        HttpServiceClient = new HttpClient { BaseAddress = new Uri(url) };
         
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls(url);
@@ -32,10 +31,7 @@ public class TestWebServer : IAsyncDisposable
         foreach (var testService in testServices) builder.Services.Replace(testService);
         builder.ConfigureEndpoints();
 
-        var httpClientFactory = Substitute.For<IHttpClientFactory>();
-        var httpClient = new HttpClient(TestHttpHandler);
-        httpClientFactory.CreateClient(Proxy.ProxyClient).Returns(httpClient);
-        builder.Services.Replace(ServiceDescriptor.Singleton(httpClientFactory));
+        ConfigureWebApp.HttpProxyClientBuilder?.AddHttpMessageHandler(() => OutboundTestHttpHandler);
 
         _app = builder.BuildWebApplication();
         Services = _app.Services;
