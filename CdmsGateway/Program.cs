@@ -5,6 +5,9 @@ using Serilog;
 using Serilog.Core;
 using System.Diagnostics.CodeAnalysis;
 using CdmsGateway.Config;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 
 //-------- Configure the WebApplication builder------------------//
 
@@ -30,7 +33,25 @@ static void ConfigureWebApplication(WebApplicationBuilder builder)
    builder.Configuration.AddEnvironmentVariables();
    builder.Configuration.AddIniFile("Properties/local.env", true);
 
-   var logger = ConfigureLogging(builder);
+   //OTEL
+
+   builder.Services.AddOpenTelemetry()
+       .WithMetrics(metrics =>
+       {
+           metrics.AddRuntimeInstrumentation()
+               .AddMeter(
+                   "Microsoft.AspNetCore.Hosting",
+                   "Microsoft.AspNetCore.Server.Kestrel",
+                   "System.Net.Http");
+       })
+       .WithTracing(tracing =>
+       {
+           tracing.AddAspNetCoreInstrumentation()
+               .AddHttpClientInstrumentation();
+       })
+       .UseOtlpExporter();
+
+var logger = ConfigureLogging(builder);
 
    // Load certificates into Trust Store - Note must happen before Mongo and Http client connections
    builder.Services.AddCustomTrustStore(logger);
@@ -49,6 +70,11 @@ static Logger ConfigureLogging(WebApplicationBuilder builder)
    var logger = new LoggerConfiguration()
        .ReadFrom.Configuration(builder.Configuration)
        .Enrich.With<LogLevelMapper>()
+       .WriteTo.OpenTelemetry(options =>
+       {
+           options.Endpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+           options.ResourceAttributes.Add("service.name", "Cdms-Gatway");
+       })
        .CreateLogger();
    builder.Logging.AddSerilog(logger);
    logger.Information("Starting application");
