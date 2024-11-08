@@ -13,7 +13,7 @@ public class MessageRouter(IHttpClientFactory clientFactory, IMessageRoutes mess
 {
     public async Task<RoutingResult> Route(MessageData messageData)
     {
-        var routingResult = messageRoutes.GetRoute(messageData.Path);
+        var routingResult = messageRoutes.GetReturnedRoute(messageData.Path);
         if (!routingResult.RouteFound) return routingResult;
 
         try

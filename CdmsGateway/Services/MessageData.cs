@@ -1,21 +1,21 @@
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json.Nodes;
+using CdmsGateway.Services.Routing;
 using ILogger = Serilog.ILogger;
 
-namespace CdmsGateway.Services.Routing;
+namespace CdmsGateway.Services;
 
 public class MessageData
 {
-    private readonly ILogger _logger;
-    private const string CorrelationIdName = "correlation-id";
-    private const string CorrelationIdSoapName = "X-Correlation-ID";
+    public const string CorrelationIdName = "X-Correlation-ID";
 
     public string CorrelationId { get; }
     public string ContentAsString { get; }
     public string HttpString { get; }
     public string Path { get; }
 
+    private readonly ILogger _logger;
     private readonly string _method;
     private readonly string _contentType;
     private readonly IHeaderDictionary _headers;
@@ -37,7 +37,7 @@ public class MessageData
             _contentType = RetrieveContentType(request);
             _headers = request.Headers;
             HttpString = $"{request.Protocol} {_method} {request.Scheme}://{request.Host}{request.Path}{request.QueryString} {_contentType}";       
-            CorrelationId = _headers[CorrelationIdSoapName].FirstOrDefault() ?? Guid.NewGuid().ToString("D");
+            CorrelationId = _headers[CorrelationIdName].FirstOrDefault() ?? Guid.NewGuid().ToString("D");
         }
         catch (Exception ex)
         {
@@ -55,7 +55,6 @@ public class MessageData
             var request = new HttpRequestMessage(new HttpMethod(_method), routeUrl);
             foreach (var header in _headers.Where(x => !x.Key.StartsWith("Content-") && x.Key != "Host")) 
                 request.Headers.Add(header.Key, header.Value.ToArray());
-            request.Headers.Add(CorrelationIdSoapName, CorrelationId);
             request.Headers.Add(CorrelationIdName, CorrelationId);
         
             request.Content = _contentType == MediaTypeNames.Application.Json 
@@ -78,7 +77,7 @@ public class MessageData
             response.StatusCode = (int)routingResult.StatusCode;
             response.ContentType = _contentType;
             response.Headers.Date = (routingResult.ResponseDate ?? DateTimeOffset.Now).ToString("R");
-            response.Headers[CorrelationIdSoapName] = CorrelationId;
+            response.Headers[CorrelationIdName] = CorrelationId;
             if (routingResult.ResponseContent != null)
                 await response.BodyWriter.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(routingResult.ResponseContent)));
         }

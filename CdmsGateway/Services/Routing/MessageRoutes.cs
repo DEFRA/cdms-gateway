@@ -4,52 +4,49 @@ namespace CdmsGateway.Services.Routing;
 
 public interface IMessageRoutes
 {
-    RoutingResult GetRoute(string routePath);
+    RoutingResult GetReturnedRoute(string routePath);
 }
 
 public class MessageRoutes : IMessageRoutes
 {
     private readonly ILogger _logger;
     private const string TestName = "test";
-    private readonly IDictionary<string, string> _routes;
+    private readonly IDictionary<string, string> _returnedRoutes;
+    private readonly IDictionary<string, string> _unreturnedRoutes;
 
-    public MessageRoutes(RouteConfig routeConfig, ILogger logger)
+    public MessageRoutes(RoutingConfig routingConfig, ILogger logger)
     {
         _logger = logger;
         try
         {
-            var stubUrl = routeConfig.StubUrl.TrimEnd('/');
-            _routes = routeConfig.Routes
-                .Select(x => new
-                {
-                    Name = x.Name.Trim('/'), 
-                    Url = (x.SelectedRoute switch
-                    {
-                        SelectedRoute.New => x.NewUrl ?? $"{stubUrl}/{x.Name}",
-                        SelectedRoute.Legacy => x.LegacyUrl ?? $"{stubUrl}/{x.Name}",
-                        SelectedRoute.Stub => $"{stubUrl}/{x.Name}",
-                        _ => $"{stubUrl}/{x.Name}"
-                    }).TrimEnd('/')
-                })
-                .Concat([new { Name = TestName, Url = $"{stubUrl}/{TestName}" }])
-                .ToDictionary(x => x.Name.ToLower(), x => x.Url.ToLower());
+            if (routingConfig.AllReturnedRoutes.Length != routingConfig.AllReturnedRoutes.Select(x => x.Name).Distinct().Count()) throw new InvalidDataException("Duplicate returned route name");
+            if (routingConfig.AllUnreturnedRoutes.Length != routingConfig.AllUnreturnedRoutes.Select(x => x.Name).Distinct().Count()) throw new InvalidDataException("Duplicate unreturned route name");
+            if (routingConfig.AllReturnedRoutes.Any(x => !Uri.TryCreate(x.Url, UriKind.Absolute, out _))) throw new InvalidDataException("Returned route URL invalid");
+            if (routingConfig.AllUnreturnedRoutes.Any(x => !Uri.TryCreate(x.Url, UriKind.Absolute, out _))) throw new InvalidDataException("Returned route URL invalid");
+
+            _returnedRoutes = routingConfig.AllReturnedRoutes.ToDictionary(x => x.Name.ToLower(), x => x.Url.Trim('/'));
+            _unreturnedRoutes = routingConfig.AllUnreturnedRoutes.ToDictionary(x => x.Name.ToLower(), x => x.Url.Trim('/'));
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error routing");
+            _logger.Error(ex, "Error creating routing table");
             throw;
         }
     }
 
-    public RoutingResult GetRoute(string routePath)
+    public RoutingResult GetReturnedRoute(string routePath) => GetRoute(routePath, _returnedRoutes);
+
+    public RoutingResult GetUnreturnedRoute(string routePath)=> GetRoute(routePath, _unreturnedRoutes);
+
+    private RoutingResult GetRoute(string routePath, IDictionary<string, string> routes)
     {
         try
         {
             var routeParts = routePath.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             if (routeParts.Length == 0) return new RoutingResult();
         
-            var routeName = routeParts[0].Trim('/').ToLower();
-            var routeUrl = _routes.TryGetValue(routeName, out var url) ? $"{url}/{string.Join('/', routeParts[1..])}" : null;
+            var routeName = routeParts[0].ToLower();
+            var routeUrl = routes.TryGetValue(routeName, out var url) ? $"{url}/{string.Join('/', routeParts[1..])}" : null;
 
             return new RoutingResult { RouteFound = routeUrl != null, RouteName = routeName, RouteUrl = routeUrl };
         }
