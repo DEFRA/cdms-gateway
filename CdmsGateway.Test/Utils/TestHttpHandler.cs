@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using CdmsGateway.Services;
+using Microsoft.Extensions.Primitives;
 
 namespace CdmsGateway.Test.Utils;
 
@@ -8,27 +9,30 @@ public class TestHttpHandler : DelegatingHandler
 {
     public const string XmlRoutedResponse = "<xml>RoutedResponse</xml>";
 
-    public HttpRequestMessage? Request;
-    public HttpResponseMessage? Response;
+    public readonly Dictionary<string, HttpRequestMessage> Requests = [];
+    public readonly Dictionary<string, HttpResponseMessage> Responses = [];
 
-    private Func<HttpStatusCode> _responseStatusCodeFunc = () => HttpStatusCode.OK;
+    private readonly Dictionary<string, Func<HttpStatusCode>> _responseStatusCodeFuncs = [];
 
-    public void ShouldErrorWithStatus(Func<HttpStatusCode> statusCodeFunc) => _responseStatusCodeFunc = statusCodeFunc;
+    public void SetResponseStatusCode(string fullUrl, Func<HttpStatusCode> statusCodeFunc) => _responseStatusCodeFuncs[fullUrl] = statusCodeFunc;
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var responseStatusCode = _responseStatusCodeFunc();
+        var fullUrl = request.RequestUri?.ToString()!;
+        var responseStatusCodeFuncFound = _responseStatusCodeFuncs.TryGetValue(fullUrl!, out var responseStatusCodeFunc);
+        var responseStatusCode = responseStatusCodeFuncFound ? responseStatusCodeFunc!() : HttpStatusCode.OK;
         if (responseStatusCode != HttpStatusCode.OK) return Task.FromResult(new HttpResponseMessage(responseStatusCode));
 
-        Request = request;
+        Requests[fullUrl] = request;
 
-        Response = new HttpResponseMessage(HttpStatusCode.OK)
+        Responses[fullUrl] = new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(XmlRoutedResponse, Encoding.UTF8, request.Content?.Headers.ContentType!)
         };
-        Response.Headers.Date = DateTimeOffset.UtcNow;
-        Response.Headers.Add(MessageData.CorrelationIdName, request.Headers.GetValues(MessageData.CorrelationIdName));
+        Responses[fullUrl].Headers.Date = DateTimeOffset.UtcNow;
+        Responses[fullUrl].Headers.Add(MessageData.CorrelationIdHeaderName, request.Headers.GetValues(MessageData.CorrelationIdHeaderName));
+        Responses[fullUrl].Headers.Add("x-requested-path", [ request.RequestUri?.AbsolutePath ]);
 
-        return Task.FromResult(Response);
+        return Task.FromResult(Responses[fullUrl]);
     }
 }

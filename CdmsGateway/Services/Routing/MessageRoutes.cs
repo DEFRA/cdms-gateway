@@ -46,9 +46,10 @@ public class MessageRoutes : IMessageRoutes
             if (routeParts.Length == 0) return new RoutingResult();
         
             var routeName = routeParts[0].ToLower();
-            var routeUrl = routes.TryGetValue(routeName, out var url) ? $"{url}/{string.Join('/', routeParts[1..])}" : null;
+            var routeUrlPath = $"/{string.Join('/', routeParts[1..])}";
+            var routeUrl = routes.TryGetValue(routeName, out var url) ? $"{url}{routeUrlPath}" : null;
 
-            return new RoutingResult { RouteFound = routeUrl != null, RouteName = routeName, RouteUrl = routeUrl };
+            return new RoutingResult { RouteFound = routeUrl != null, RouteName = routeName, RouteUrl = routeUrl, RouteUrlPath = routeUrlPath };
         }
         catch (Exception ex)
         {

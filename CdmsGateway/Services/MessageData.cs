@@ -8,7 +8,8 @@ namespace CdmsGateway.Services;
 
 public class MessageData
 {
-    public const string CorrelationIdName = "X-Correlation-ID";
+    public const string CorrelationIdHeaderName = "X-Correlation-ID";
+    public const string RequestedPathHeaderName = "x-requested-path";
 
     public string CorrelationId { get; }
     public string ContentAsString { get; }
@@ -37,7 +38,7 @@ public class MessageData
             _contentType = RetrieveContentType(request);
             _headers = request.Headers;
             HttpString = $"{request.Protocol} {_method} {request.Scheme}://{request.Host}{request.Path}{request.QueryString} {_contentType}";       
-            CorrelationId = _headers[CorrelationIdName].FirstOrDefault() ?? Guid.NewGuid().ToString("D");
+            CorrelationId = _headers[CorrelationIdHeaderName].FirstOrDefault() ?? Guid.NewGuid().ToString("D");
         }
         catch (Exception ex)
         {
@@ -55,7 +56,7 @@ public class MessageData
             var request = new HttpRequestMessage(new HttpMethod(_method), routeUrl);
             foreach (var header in _headers.Where(x => !x.Key.StartsWith("Content-") && x.Key != "Host")) 
                 request.Headers.Add(header.Key, header.Value.ToArray());
-            request.Headers.Add(CorrelationIdName, CorrelationId);
+            request.Headers.Add(CorrelationIdHeaderName, CorrelationId);
         
             request.Content = _contentType == MediaTypeNames.Application.Json 
                 ? JsonContent.Create(JsonNode.Parse(string.IsNullOrWhiteSpace(ContentAsString) ? "{}" : ContentAsString)) 
@@ -77,7 +78,8 @@ public class MessageData
             response.StatusCode = (int)routingResult.StatusCode;
             response.ContentType = _contentType;
             response.Headers.Date = (routingResult.ResponseDate ?? DateTimeOffset.Now).ToString("R");
-            response.Headers[CorrelationIdName] = CorrelationId;
+            response.Headers[CorrelationIdHeaderName] = CorrelationId;
+            response.Headers[RequestedPathHeaderName] = routingResult.RouteUrlPath;
             if (routingResult.ResponseContent != null)
                 await response.BodyWriter.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(routingResult.ResponseContent)));
         }
