@@ -38,7 +38,7 @@ public class GatewayEndToEndTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task When_routing_request_Then_should_respond_correctly()
+    public async Task When_routing_returned_request_Then_should_respond_correctly()
     {
         var response = await _httpClient.PostAsync("alvs-ipaffs/sub-path", new StringContent(XmlContent, Encoding.UTF8, MediaTypeNames.Application.Xml));
         
@@ -50,10 +50,10 @@ public class GatewayEndToEndTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task When_routing_request_Then_should_route_correctly()
+    public async Task When_routing_returned_request_Then_should_route_correctly()
     {
         var routingConfig = _testWebServer.Services.GetRequiredService<RoutingConfig>();
-        var expectedRoutUrl = routingConfig.AllReturnedRoutes.Single(x => x.Name == "alvs-ipaffs").Url; 
+        var expectedRoutUrl = routingConfig.AllRoutedRoutes.Single(x => x.Name == "alvs-ipaffs").Url; 
         
         await _httpClient.PostAsync("alvs-ipaffs/sub-path", new StringContent(XmlContent, Encoding.UTF8, MediaTypeNames.Application.Xml));
         

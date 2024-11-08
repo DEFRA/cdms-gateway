@@ -8,13 +8,13 @@ public static class TestRoutes
     {
         Routes =
         [
-            new NamedRoute { Name = "route-1", RoutedUrlName = "url-1", UnreturnedUrlName = "url-2" },
-            new NamedRoute { Name = "route-2", RoutedUrlName = "url-2", UnreturnedUrlName = "url-3" }
+            new NamedRoute { Name = "route-1", RoutedUrlName = "url-1", ForkedUrlName = "url-2" },
+            new NamedRoute { Name = "route-2", RoutedUrlName = "url-2", ForkedUrlName = "url-3" }
         ],
         AdditionalRoutes =
         [
-            new NamedRoute { Name = "route-3", RoutedUrlName = "url-3", UnreturnedUrlName = "url-4" },
-            new NamedRoute { Name = "route-4", RoutedUrlName = "url-1", UnreturnedUrlName = "url-3" }
+            new NamedRoute { Name = "route-3", RoutedUrlName = "url-3", ForkedUrlName = "url-4" },
+            new NamedRoute { Name = "route-4", RoutedUrlName = "url-1", ForkedUrlName = "url-3" }
         ],
         NamedUrls =
         [

@@ -4,28 +4,28 @@ namespace CdmsGateway.Services.Routing;
 
 public interface IMessageRoutes
 {
-    RoutingResult GetReturnedRoute(string routePath);
+    RoutingResult GetRoutedRoute(string routePath);
 }
 
 public class MessageRoutes : IMessageRoutes
 {
     private readonly ILogger _logger;
     private const string TestName = "test";
-    private readonly IDictionary<string, string> _returnedRoutes;
-    private readonly IDictionary<string, string> _unreturnedRoutes;
+    private readonly IDictionary<string, string> _routedRoutes;
+    private readonly IDictionary<string, string> _forkedRoutes;
 
     public MessageRoutes(RoutingConfig routingConfig, ILogger logger)
     {
         _logger = logger;
         try
         {
-            if (routingConfig.AllReturnedRoutes.Length != routingConfig.AllReturnedRoutes.Select(x => x.Name).Distinct().Count()) throw new InvalidDataException("Duplicate returned route name");
-            if (routingConfig.AllUnreturnedRoutes.Length != routingConfig.AllUnreturnedRoutes.Select(x => x.Name).Distinct().Count()) throw new InvalidDataException("Duplicate unreturned route name");
-            if (routingConfig.AllReturnedRoutes.Any(x => !Uri.TryCreate(x.Url, UriKind.Absolute, out _))) throw new InvalidDataException("Returned route URL invalid");
-            if (routingConfig.AllUnreturnedRoutes.Any(x => !Uri.TryCreate(x.Url, UriKind.Absolute, out _))) throw new InvalidDataException("Returned route URL invalid");
+            if (routingConfig.AllRoutedRoutes.Length != routingConfig.AllRoutedRoutes.Select(x => x.Name).Distinct().Count()) throw new InvalidDataException("Duplicate routed route name");
+            if (routingConfig.AllForkedRoutes.Length != routingConfig.AllForkedRoutes.Select(x => x.Name).Distinct().Count()) throw new InvalidDataException("Duplicate forked route name");
+            if (routingConfig.AllRoutedRoutes.Any(x => !Uri.TryCreate(x.Url, UriKind.Absolute, out _))) throw new InvalidDataException("Routed URL invalid");
+            if (routingConfig.AllForkedRoutes.Any(x => !Uri.TryCreate(x.Url, UriKind.Absolute, out _))) throw new InvalidDataException("Forked URL invalid");
 
-            _returnedRoutes = routingConfig.AllReturnedRoutes.ToDictionary(x => x.Name.ToLower(), x => x.Url.Trim('/'));
-            _unreturnedRoutes = routingConfig.AllUnreturnedRoutes.ToDictionary(x => x.Name.ToLower(), x => x.Url.Trim('/'));
+            _routedRoutes = routingConfig.AllRoutedRoutes.ToDictionary(x => x.Name.ToLower(), x => x.Url.Trim('/'));
+            _forkedRoutes = routingConfig.AllForkedRoutes.ToDictionary(x => x.Name.ToLower(), x => x.Url.Trim('/'));
         }
         catch (Exception ex)
         {
@@ -34,9 +34,9 @@ public class MessageRoutes : IMessageRoutes
         }
     }
 
-    public RoutingResult GetReturnedRoute(string routePath) => GetRoute(routePath, _returnedRoutes);
+    public RoutingResult GetRoutedRoute(string routePath) => GetRoute(routePath, _routedRoutes);
 
-    public RoutingResult GetUnreturnedRoute(string routePath)=> GetRoute(routePath, _unreturnedRoutes);
+    public RoutingResult GetforkedRoute(string routePath)=> GetRoute(routePath, _forkedRoutes);
 
     private RoutingResult GetRoute(string routePath, IDictionary<string, string> routes)
     {
