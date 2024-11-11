@@ -31,7 +31,7 @@ public class MessageRoutesTests
     {
         var messageRoutes = new MessageRoutes(TestRoutes.RoutingConfig, Substitute.For<ILogger>());
 
-        var route = messageRoutes.GetforkedRoute(routedPath);
+        var route = messageRoutes.GetForkedRoute(routedPath);
 
         route.RouteFound.Should().BeTrue();
         route.RouteUrl.Should().Be(expectedRoutePath);

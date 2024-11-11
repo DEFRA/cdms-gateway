@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using CdmsGateway.Services;
-using Microsoft.Extensions.Primitives;
 
 namespace CdmsGateway.Test.Utils;
 

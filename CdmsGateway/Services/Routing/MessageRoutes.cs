@@ -5,12 +5,12 @@ namespace CdmsGateway.Services.Routing;
 public interface IMessageRoutes
 {
     RoutingResult GetRoutedRoute(string routePath);
+    RoutingResult GetForkedRoute(string routePath);
 }
 
 public class MessageRoutes : IMessageRoutes
 {
     private readonly ILogger _logger;
-    private const string TestName = "test";
     private readonly IDictionary<string, string> _routedRoutes;
     private readonly IDictionary<string, string> _forkedRoutes;
 
@@ -36,7 +36,7 @@ public class MessageRoutes : IMessageRoutes
 
     public RoutingResult GetRoutedRoute(string routePath) => GetRoute(routePath, _routedRoutes);
 
-    public RoutingResult GetforkedRoute(string routePath)=> GetRoute(routePath, _forkedRoutes);
+    public RoutingResult GetForkedRoute(string routePath) => GetRoute(routePath, _forkedRoutes);
 
     private RoutingResult GetRoute(string routePath, IDictionary<string, string> routes)
     {
