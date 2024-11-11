@@ -9,8 +9,6 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
-//-------- Configure the WebApplication builder------------------//
-
 var app = CreateWebApplication(args);
 await app.RunAsync();
 return;
@@ -33,20 +31,19 @@ static void ConfigureWebApplication(WebApplicationBuilder builder)
     builder.Configuration.AddEnvironmentVariables();
     builder.Configuration.AddIniFile("Properties/local.env", true);
 
-    //OTEL
     builder.Services.AddOpenTelemetry()
         .WithMetrics(metrics =>
         {
             metrics.AddRuntimeInstrumentation()
-                .AddMeter(
-                    "Microsoft.AspNetCore.Hosting",
-                    "Microsoft.AspNetCore.Server.Kestrel",
-                    "System.Net.Http");
+                   .AddMeter(
+                       "Microsoft.AspNetCore.Hosting",
+                       "Microsoft.AspNetCore.Server.Kestrel",
+                       "System.Net.Http");
         })
         .WithTracing(tracing =>
         {
             tracing.AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation();
+                   .AddHttpClientInstrumentation();
         })
         .UseOtlpExporter();
 
@@ -65,19 +62,19 @@ static void ConfigureWebApplication(WebApplicationBuilder builder)
 [ExcludeFromCodeCoverage]
 static Logger ConfigureLogging(WebApplicationBuilder builder)
 {
-    builder.Logging.ClearProviders();
-    var logger = new LoggerConfiguration()
-        .ReadFrom.Configuration(builder.Configuration)
-        .Enrich.With<LogLevelMapper>()
-        .WriteTo.OpenTelemetry(options =>
-        {
-            options.Endpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
-            options.ResourceAttributes.Add("service.name", "Cdms-Gatway");
-        })
-        .CreateLogger();
-    builder.Logging.AddSerilog(logger);
-    logger.Information("Starting application");
-    return logger;
+   builder.Logging.ClearProviders();
+   var logger = new LoggerConfiguration()
+       .ReadFrom.Configuration(builder.Configuration)
+       .Enrich.With<LogLevelMapper>()
+       .WriteTo.OpenTelemetry(options =>
+       {
+           options.Endpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+           options.ResourceAttributes.Add("service.name", "cdms-gateway");
+       })
+       .CreateLogger();
+   builder.Logging.AddSerilog(logger);
+   logger.Information("Starting application");
+   return logger;
 }
 
 [ExcludeFromCodeCoverage]
