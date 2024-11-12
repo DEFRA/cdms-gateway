@@ -66,11 +66,6 @@ static Logger ConfigureLogging(WebApplicationBuilder builder)
    var logger = new LoggerConfiguration()
        .ReadFrom.Configuration(builder.Configuration)
        .Enrich.With<LogLevelMapper>()
-       .WriteTo.OpenTelemetry(options =>
-       {
-           options.Endpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
-           options.ResourceAttributes.Add("service.name", "cdms-gateway");
-       })
        .CreateLogger();
    builder.Logging.AddSerilog(logger);
    logger.Information("Starting application");
