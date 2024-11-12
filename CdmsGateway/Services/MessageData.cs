@@ -14,11 +14,12 @@ public class MessageData
     public string CorrelationId { get; }
     public string ContentAsString { get; }
     public string HttpString { get; }
+    public string Url { get; }
     public string Path { get; }
+    public string Method { get; }
+    public string ContentType { get; }
 
     private readonly ILogger _logger;
-    private readonly string _method;
-    private readonly string _contentType;
     private readonly IHeaderDictionary _headers;
 
     public static async Task<MessageData> Create(HttpRequest request, ILogger logger)
@@ -33,11 +34,12 @@ public class MessageData
         try
         {
             ContentAsString = contentAsString;
-            _method = request.Method;
+            Method = request.Method;
             Path = request.Path.HasValue ? request.Path.Value.Trim('/') : string.Empty;
-            _contentType = RetrieveContentType(request);
+            ContentType = RetrieveContentType(request);
             _headers = request.Headers;
-            HttpString = $"{request.Protocol} {_method} {request.Scheme}://{request.Host}{request.Path}{request.QueryString} {_contentType}";       
+            Url = $"{request.Scheme}://{request.Host}{request.Path}{request.QueryString}";
+            HttpString = $"{request.Protocol} {Method} {Url} {ContentType}";       
             CorrelationId = _headers[CorrelationIdHeaderName].FirstOrDefault() ?? Guid.NewGuid().ToString("D");
         }
         catch (Exception ex)
@@ -47,20 +49,20 @@ public class MessageData
         }
     }
 
-    public bool ShouldProcessRequest() => !(_method == HttpMethods.Get && Path == "health");
+    public bool ShouldProcessRequest() => !(Method == HttpMethods.Get && Path == "health");
 
     public HttpRequestMessage CreateForwardingRequest(string? routeUrl)
     {
         try
         {
-            var request = new HttpRequestMessage(new HttpMethod(_method), routeUrl);
+            var request = new HttpRequestMessage(new HttpMethod(Method), routeUrl);
             foreach (var header in _headers.Where(x => !x.Key.StartsWith("Content-") && x.Key != "Host")) 
                 request.Headers.Add(header.Key, header.Value.ToArray());
             request.Headers.Add(CorrelationIdHeaderName, CorrelationId);
         
-            request.Content = _contentType == MediaTypeNames.Application.Json 
+            request.Content = ContentType == MediaTypeNames.Application.Json 
                 ? JsonContent.Create(JsonNode.Parse(string.IsNullOrWhiteSpace(ContentAsString) ? "{}" : ContentAsString)) 
-                : new StringContent(ContentAsString, Encoding.UTF8, _contentType);
+                : new StringContent(ContentAsString, Encoding.UTF8, ContentType);
 
             return request;
         }
@@ -76,7 +78,7 @@ public class MessageData
         try
         {
             response.StatusCode = (int)routingResult.StatusCode;
-            response.ContentType = _contentType;
+            response.ContentType = ContentType;
             response.Headers.Date = (routingResult.ResponseDate ?? DateTimeOffset.Now).ToString("R");
             response.Headers[CorrelationIdHeaderName] = CorrelationId;
             response.Headers[RequestedPathHeaderName] = routingResult.RouteUrlPath;

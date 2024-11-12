@@ -38,7 +38,8 @@ static void ConfigureWebApplication(WebApplicationBuilder builder)
                    .AddMeter(
                        "Microsoft.AspNetCore.Hosting",
                        "Microsoft.AspNetCore.Server.Kestrel",
-                       "System.Net.Http");
+                       "System.Net.Http",
+                       MetricsHost.Name);
         })
         .WithTracing(tracing =>
         {
