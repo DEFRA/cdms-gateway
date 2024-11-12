@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Mime;
 using System.Text;
+using CdmsGateway.Services;
 using CdmsGateway.Services.Routing;
 using CdmsGateway.Test.Utils;
 using FluentAssertions;
@@ -11,17 +12,35 @@ namespace CdmsGateway.Test;
 public class GatewayEndToEndTests : IAsyncDisposable
 {
     private const string XmlContent = "<xml>Content</xml>";
+    private const string RouteName = "alvs-ipaffs";
+    private const string SubPath = "sub-path";
+    private const string FullPath = $"{RouteName}/{SubPath}";
+    private const string RoutedPath = $"/{SubPath}";
+    private const string ForkedPath = $"/forked/{SubPath}";
 
+    private readonly TestMessageFork _testMessageFork = new();
     private readonly string _headerCorrelationId = Guid.NewGuid().ToString("D");
     private readonly DateTimeOffset _headerDate = DateTimeOffset.UtcNow.AddSeconds(-1).RoundDownToSecond();
-    private readonly TestWebServer _testWebServer = TestWebServer.BuildAndRun();
+    private readonly TestWebServer _testWebServer;
     private readonly HttpClient _httpClient;
+    private readonly string _expectedRoutedUrl;
+    private readonly string _expectedForkedUrl;
+    private readonly TestHttpHandler _httpHandler;
+    private readonly StringContent _stringContent;
 
     public GatewayEndToEndTests()
     {
+        _testWebServer = TestWebServer.BuildAndRun(ServiceDescriptor.Singleton<IMessageFork>(_testMessageFork));
         _httpClient = _testWebServer.HttpServiceClient;
         _httpClient.DefaultRequestHeaders.Date = _headerDate;
-        _httpClient.DefaultRequestHeaders.Add(TestHttpHandler.CorrelationIdHeaderName, _headerCorrelationId);
+        _httpClient.DefaultRequestHeaders.Add(MessageData.CorrelationIdHeaderName, _headerCorrelationId);
+        _httpHandler = _testWebServer.OutboundTestHttpHandler;
+        
+        var routingConfig = _testWebServer.Services.GetRequiredService<RoutingConfig>();
+        var expectedRoutUrl = routingConfig.AllRoutedRoutes.Single(x => x.Name == RouteName).Url;
+        _expectedRoutedUrl = $"{expectedRoutUrl.Trim('/')}/{SubPath}";
+        _expectedForkedUrl = $"{expectedRoutUrl.Trim('/')}/forked/{SubPath}";
+        _stringContent = new StringContent(XmlContent, Encoding.UTF8, MediaTypeNames.Application.Xml);
     }
 
     public async ValueTask DisposeAsync() => await _testWebServer.DisposeAsync();
@@ -37,46 +56,88 @@ public class GatewayEndToEndTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task When_routing_request_Then_should_respond_correctly()
+    public async Task When_routing_request_Then_should_respond_from_routed_request()
     {
-        var response = await _httpClient.PostAsync("alvs-ipaffs/sub-path", new StringContent(XmlContent, Encoding.UTF8, MediaTypeNames.Application.Xml));
+        var response = await _httpClient.PostAsync(FullPath, _stringContent);
+        _testMessageFork.HasForked.WaitOne();
         
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType?.ToString().Should().Be(MediaTypeNames.Application.Xml);
         response.Headers.Date.Should().BeAfter(_headerDate);
-        response.Headers.GetValues(TestHttpHandler.CorrelationIdHeaderName).FirstOrDefault().Should().Be(_headerCorrelationId);
+        response.Headers.GetValues(MessageData.CorrelationIdHeaderName).FirstOrDefault().Should().Be(_headerCorrelationId);
+        response.Headers.GetValues(MessageData.RequestedPathHeaderName).FirstOrDefault().Should().Be(RoutedPath);
         (await response.Content.ReadAsStringAsync()).Should().Be(TestHttpHandler.XmlRoutedResponse);
     }
 
     [Fact]
-    public async Task When_routing_request_Then_should_route_correctly()
+    public async Task When_routing_routed_request_Then_should_route_correctly()
     {
-        var expectedRoutUrl = _testWebServer.Services.GetRequiredService<RouteConfig>().StubUrl; 
-        _testWebServer.OutboundTestHttpHandler.ExpectRouteUrl($"{expectedRoutUrl}alvs-ipaffs/sub-path")
-                                      .ExpectRouteMethod("POST")
-                                      .ExpectRouteHeaderDate(_headerDate)
-                                      .ExpectRouteHeaderCorrelationId(_headerCorrelationId)
-                                      .ExpectRouteContentType(MediaTypeNames.Application.Xml)
-                                      .ExpectRouteContent(XmlContent);
+        await _httpClient.PostAsync(FullPath, _stringContent);
+        _testMessageFork.HasForked.WaitOne();
 
-        await _httpClient.PostAsync("alvs-ipaffs/sub-path", new StringContent(XmlContent, Encoding.UTF8, MediaTypeNames.Application.Xml));
+        var request = _httpHandler.Requests[_expectedRoutedUrl];
+        request?.RequestUri?.ToString().Should().Be(_expectedRoutedUrl);
+        request?.Method.ToString().Should().Be("POST");
+        (await request?.Content?.ReadAsStringAsync()!).Should().Be(XmlContent);
+        request?.Content?.Headers.ContentType?.ToString().Should().StartWith(MediaTypeNames.Application.Xml);
+        request?.Headers.Date?.Should().Be(_headerDate);
+        request?.Headers.GetValues(MessageData.CorrelationIdHeaderName).FirstOrDefault().Should().Be(_headerCorrelationId);
 
-        _testWebServer.OutboundTestHttpHandler.WasExpectedRequestSent().Should().BeTrue();
-        _testWebServer.OutboundTestHttpHandler.Response?.StatusCode.Should().Be(HttpStatusCode.OK);
-        _testWebServer.OutboundTestHttpHandler.Response?.Headers.Date.Should().BeAfter(_headerDate);
-        _testWebServer.OutboundTestHttpHandler.Response?.Headers.GetValues(TestHttpHandler.CorrelationIdHeaderName).FirstOrDefault().Should().Be(_headerCorrelationId);
-        _testWebServer.OutboundTestHttpHandler.Response?.Content.Headers.ContentType?.ToString().Should().StartWith(MediaTypeNames.Application.Xml);
-        (await _testWebServer.OutboundTestHttpHandler.Response?.Content.ReadAsStringAsync()!).Should().Be(TestHttpHandler.XmlRoutedResponse);
+        var response = _httpHandler.Responses[_expectedRoutedUrl];
+        response?.StatusCode.Should().Be(HttpStatusCode.OK);
+        response?.Headers.Date.Should().BeAfter(_headerDate);
+        response?.Headers.GetValues(MessageData.CorrelationIdHeaderName).FirstOrDefault().Should().Be(_headerCorrelationId);
+        response?.Headers.GetValues(MessageData.RequestedPathHeaderName).FirstOrDefault().Should().Be(RoutedPath);
+        response?.Content.Headers.ContentType?.ToString().Should().StartWith(MediaTypeNames.Application.Xml);
+        (await response?.Content.ReadAsStringAsync()!).Should().Be(TestHttpHandler.XmlRoutedResponse);
+    }
+
+    [Fact]
+    public async Task When_routing_forked_request_Then_should_route_correctly()
+    {
+        await _httpClient.PostAsync(FullPath, _stringContent);
+        _testMessageFork.HasForked.WaitOne();
+
+        var request = _httpHandler.Requests[_expectedForkedUrl];
+        request?.RequestUri?.ToString().Should().Be(_expectedForkedUrl);
+        request?.Method.ToString().Should().Be("POST");
+        (await request?.Content?.ReadAsStringAsync()!).Should().Be(XmlContent);
+        request?.Content?.Headers.ContentType?.ToString().Should().StartWith(MediaTypeNames.Application.Xml);
+        request?.Headers.Date?.Should().Be(_headerDate);
+        request?.Headers.GetValues(MessageData.CorrelationIdHeaderName).FirstOrDefault().Should().Be(_headerCorrelationId);
+
+        await Task.Delay(1000);
+        var response = _httpHandler.Responses[_expectedForkedUrl];
+        response?.StatusCode.Should().Be(HttpStatusCode.OK);
+        response?.Headers.Date.Should().BeAfter(_headerDate);
+        response?.Headers.GetValues(MessageData.CorrelationIdHeaderName).FirstOrDefault().Should().Be(_headerCorrelationId);
+        response?.Headers.GetValues(MessageData.RequestedPathHeaderName).FirstOrDefault().Should().Be(ForkedPath);
+        response?.Content.Headers.ContentType?.ToString().Should().StartWith(MediaTypeNames.Application.Xml);
+        (await response?.Content.ReadAsStringAsync()!).Should().Be(TestHttpHandler.XmlRoutedResponse);
     }
 
     [Fact]
     public async Task When_routed_request_returns_502_Then_should_retry()
     {
         var callNum = 0;
-        _testWebServer.OutboundTestHttpHandler.ShouldErrorWithStatus(() => ++callNum == 1 ? HttpStatusCode.BadGateway : HttpStatusCode.OK);
+        _testWebServer.OutboundTestHttpHandler.SetResponseStatusCode(_expectedRoutedUrl, () => ++callNum == 1 ? HttpStatusCode.BadGateway : HttpStatusCode.OK);
         
-        var response = await _httpClient.PostAsync("alvs-ipaffs/sub-path", new StringContent(XmlContent, Encoding.UTF8, MediaTypeNames.Application.Xml));
+        var response = await _httpClient.PostAsync(FullPath, _stringContent);
+        _testMessageFork.HasForked.WaitOne();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        callNum.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task When_forked_request_returns_502_Then_should_retry()
+    {
+        var callNum = 0;
+        _testWebServer.OutboundTestHttpHandler.SetResponseStatusCode(_expectedForkedUrl, () => ++callNum == 1 ? HttpStatusCode.BadGateway : HttpStatusCode.OK);
         
+        var response = await _httpClient.PostAsync(FullPath, _stringContent);
+        _testMessageFork.HasForked.WaitOne();
+
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         callNum.Should().Be(2);
     }

@@ -22,9 +22,10 @@ public class TestWebServer : IAsyncDisposable
     private TestWebServer(params ServiceDescriptor[] testServices)
     {
         OutboundTestHttpHandler = new TestHttpHandler();
-        var url = $"http://localhost:{_portNumber++}/";
+        var url = $"http://localhost:{_portNumber}/";
+        Interlocked.Increment(ref _portNumber);
         HttpServiceClient = new HttpClient { BaseAddress = new Uri(url) };
-        
+
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls(url);
         builder.AddServices(Substitute.For<Serilog.ILogger>());

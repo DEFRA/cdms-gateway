@@ -1,59 +1,37 @@
 using System.Net;
 using System.Text;
+using CdmsGateway.Services;
 
 namespace CdmsGateway.Test.Utils;
 
 public class TestHttpHandler : DelegatingHandler
 {
-    public const string CorrelationIdHeaderName = "X-Correlation-ID";
     public const string XmlRoutedResponse = "<xml>RoutedResponse</xml>";
 
-    public TestHttpHandler ExpectRouteUrl(string routeUrl) { _routeUrl = routeUrl; return this; }
-    public TestHttpHandler ExpectRouteMethod(string routeMethod) { _routeMethod = routeMethod; return this; }
-    public TestHttpHandler ExpectRouteHeaderDate(DateTimeOffset routeHeaderDate) { _routeHeaderDate = routeHeaderDate; return this; }
-    public TestHttpHandler ExpectRouteHeaderCorrelationId(string routeHeaderCorrelationId) { _routeHeaderCorrelationId = routeHeaderCorrelationId; return this; }
-    public TestHttpHandler ExpectRouteContentType(string routeContentType) { _routeContentType = routeContentType; return this; }
-    public TestHttpHandler ExpectRouteContent(string routeContent) { _routeContent = routeContent; return this; }
+    public readonly Dictionary<string, HttpRequestMessage> Requests = [];
+    public readonly Dictionary<string, HttpResponseMessage> Responses = [];
 
-    public HttpResponseMessage? Response;
+    private readonly Dictionary<string, Func<HttpStatusCode>> _responseStatusCodeFuncs = [];
 
-    public void ShouldErrorWithStatus(Func<HttpStatusCode> statusCodeFunc) => _responseStatusCodeFunc = statusCodeFunc;
+    public void SetResponseStatusCode(string fullUrl, Func<HttpStatusCode> statusCodeFunc) => _responseStatusCodeFuncs[fullUrl] = statusCodeFunc;
 
-    private Func<HttpStatusCode> _responseStatusCodeFunc = () => HttpStatusCode.OK;
-    
-    private HttpRequestMessage? _request;
-    private string? _routeUrl;
-    private string? _routeMethod;
-    private DateTimeOffset? _routeHeaderDate;
-    private string? _routeHeaderCorrelationId;
-    private string? _routeContentType;
-    private string? _routeContent;
-    private string? _routedContent;
-
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var responseStatusCode = _responseStatusCodeFunc();
-        if (responseStatusCode != HttpStatusCode.OK) return new HttpResponseMessage(responseStatusCode);
-        
-        _request = request;
+        var fullUrl = request.RequestUri?.ToString()!;
+        var responseStatusCodeFuncFound = _responseStatusCodeFuncs.TryGetValue(fullUrl!, out var responseStatusCodeFunc);
+        var responseStatusCode = responseStatusCodeFuncFound ? responseStatusCodeFunc!() : HttpStatusCode.OK;
+        if (responseStatusCode != HttpStatusCode.OK) return Task.FromResult(new HttpResponseMessage(responseStatusCode));
 
-        _routedContent = await request.Content?.ReadAsStringAsync(cancellationToken)!;
+        Requests[fullUrl] = request;
 
-        Response = new HttpResponseMessage(HttpStatusCode.OK)
+        Responses[fullUrl] = new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent(XmlRoutedResponse, Encoding.UTF8, request.Content.Headers.ContentType!)
+            Content = new StringContent(XmlRoutedResponse, Encoding.UTF8, request.Content?.Headers.ContentType!)
         };
-        Response.Headers.Date = DateTimeOffset.UtcNow;
-        Response.Headers.Add(CorrelationIdHeaderName, request.Headers.GetValues(CorrelationIdHeaderName));
-        
-        return Response;
-    }
+        Responses[fullUrl].Headers.Date = DateTimeOffset.UtcNow;
+        Responses[fullUrl].Headers.Add(MessageData.CorrelationIdHeaderName, request.Headers.GetValues(MessageData.CorrelationIdHeaderName));
+        Responses[fullUrl].Headers.Add("x-requested-path", [ request.RequestUri?.AbsolutePath ]);
 
-    public bool WasExpectedRequestSent() => _request != null
-                                            && _request.RequestUri?.ToString() == _routeUrl
-                                            && _request.Method.ToString() == _routeMethod
-                                            && _request.Headers.Date == _routeHeaderDate
-                                            && _request.Headers.GetValues(CorrelationIdHeaderName).FirstOrDefault() == _routeHeaderCorrelationId
-                                            && _request.Content?.Headers.ContentType?.ToString().StartsWith(_routeContentType!) == true
-                                            && _routedContent == _routeContent;
+        return Task.FromResult(Responses[fullUrl]);
+    }
 }

@@ -18,13 +18,14 @@ public static class ConfigureWebApp
     public static void AddServices(this WebApplicationBuilder builder, ILogger logger)
     {
         builder.Services.AddSingleton(logger);
-        builder.ConfigureToType<RouteConfig>("Routes");
+        builder.ConfigureToType<RoutingConfig>("Routing");
 
         HttpProxyClientBuilder = builder.Services.AddHttpProxyClient(logger).AddPolicyHandler(_ => HttpPolicyExtensions.HandleTransientHttpError().WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(100)));
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();
    
         builder.Services.AddSingleton<IMessageRouter, MessageRouter>();
         builder.Services.AddSingleton<IMessageRoutes, MessageRoutes>();
+        builder.Services.AddSingleton<IMessageFork, MessageFork>();
     }
 
     [ExcludeFromCodeCoverage]

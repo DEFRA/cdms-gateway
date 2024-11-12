@@ -9,8 +9,6 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
-//-------- Configure the WebApplication builder------------------//
-
 var app = CreateWebApplication(args);
 await app.RunAsync();
 return;
@@ -18,49 +16,47 @@ return;
 [ExcludeFromCodeCoverage]
 static WebApplication CreateWebApplication(string[] args)
 {
-   var builder = WebApplication.CreateBuilder(args);
+    var builder = WebApplication.CreateBuilder(args);
 
-   ConfigureWebApplication(builder);
+    ConfigureWebApplication(builder);
 
-   var app = builder.BuildWebApplication();
+    var app = builder.BuildWebApplication();
 
-   return app;
+    return app;
 }
 
 [ExcludeFromCodeCoverage]
 static void ConfigureWebApplication(WebApplicationBuilder builder)
 {
-   builder.Configuration.AddEnvironmentVariables();
-   builder.Configuration.AddIniFile("Properties/local.env", true);
+    builder.Configuration.AddEnvironmentVariables();
+    builder.Configuration.AddIniFile("Properties/local.env", true);
 
-   //OTEL
+    builder.Services.AddOpenTelemetry()
+        .WithMetrics(metrics =>
+        {
+            metrics.AddRuntimeInstrumentation()
+                   .AddMeter(
+                       "Microsoft.AspNetCore.Hosting",
+                       "Microsoft.AspNetCore.Server.Kestrel",
+                       "System.Net.Http");
+        })
+        .WithTracing(tracing =>
+        {
+            tracing.AddAspNetCoreInstrumentation()
+                   .AddHttpClientInstrumentation();
+        })
+        .UseOtlpExporter();
 
-   builder.Services.AddOpenTelemetry()
-       .WithMetrics(metrics =>
-       {
-           metrics.AddRuntimeInstrumentation()
-               .AddMeter(
-                   "Microsoft.AspNetCore.Hosting",
-                   "Microsoft.AspNetCore.Server.Kestrel",
-                   "System.Net.Http");
-       })
-       .WithTracing(tracing =>
-       {
-           tracing.AddAspNetCoreInstrumentation()
-               .AddHttpClientInstrumentation();
-       })
-       .UseOtlpExporter();
+    var logger = ConfigureLogging(builder);
 
-var logger = ConfigureLogging(builder);
+    // Load certificates into Trust Store - Note must happen before Mongo and Http client connections
+    builder.Services.AddCustomTrustStore(logger);
 
-   // Load certificates into Trust Store - Note must happen before Mongo and Http client connections
-   builder.Services.AddCustomTrustStore(logger);
+    ConfigureMongoDb(builder);
 
-   ConfigureMongoDb(builder);
+    builder.ConfigureEndpoints();
 
-   builder.ConfigureEndpoints();
-
-   builder.AddServices(logger);
+    builder.AddServices(logger);
 }
 
 [ExcludeFromCodeCoverage]
@@ -84,7 +80,7 @@ static Logger ConfigureLogging(WebApplicationBuilder builder)
 [ExcludeFromCodeCoverage]
 static void ConfigureMongoDb(WebApplicationBuilder builder)
 {
-   builder.Services.AddSingleton<IMongoDbClientFactory>(_ =>
-       new MongoDbClientFactory(builder.Configuration.GetValue<string>("Mongo:DatabaseUri")!,
-           builder.Configuration.GetValue<string>("Mongo:DatabaseName")!));
+    builder.Services.AddSingleton<IMongoDbClientFactory>(_ =>
+        new MongoDbClientFactory(builder.Configuration.GetValue<string>("Mongo:DatabaseUri")!,
+            builder.Configuration.GetValue<string>("Mongo:DatabaseName")!));
 }
