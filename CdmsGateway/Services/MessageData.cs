@@ -1,15 +1,19 @@
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using CdmsGateway.Services.Routing;
 using ILogger = Serilog.ILogger;
 
 namespace CdmsGateway.Services;
 
-public class MessageData
+public partial class MessageData
 {
     public const string CorrelationIdHeaderName = "X-Correlation-ID";
     public const string RequestedPathHeaderName = "x-requested-path";
+
+    [GeneratedRegex("CHED[A-Z]+")]
+    private static partial Regex RegexChed();
 
     public string CorrelationId { get; }
     public string ContentAsString { get; }
@@ -18,6 +22,7 @@ public class MessageData
     public string Path { get; }
     public string Method { get; }
     public string ContentType { get; }
+    public string ChedType { get; }
 
     private readonly ILogger _logger;
     private readonly IHeaderDictionary _headers;
@@ -34,6 +39,7 @@ public class MessageData
         try
         {
             ContentAsString = contentAsString;
+            ChedType = RegexChed().Match(contentAsString).Value;
             Method = request.Method;
             Path = request.Path.HasValue ? request.Path.Value.Trim('/') : string.Empty;
             ContentType = RetrieveContentType(request);

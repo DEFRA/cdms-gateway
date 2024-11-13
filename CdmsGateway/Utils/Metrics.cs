@@ -19,6 +19,7 @@ public class Metrics(MetricsHost metricsHost)
             { "method", messageData.Method },
             { "content-type", messageData.ContentType },
             { "path", messageData.Path },
+            { "ched-type", messageData.ChedType },
             { "route-name", routingResult.RouteName },
             { "route-found", routingResult.RouteFound },
             { "routing-successful", routingResult.RoutingSuccessful },
