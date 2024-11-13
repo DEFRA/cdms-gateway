@@ -55,6 +55,8 @@ public class MessageData
 
     public bool ShouldProcessRequest() => !(Method == HttpMethods.Get && Path == "health");
 
+    public bool ShouldCheckRoutes() => Path.ToLower() is "checkroutes" or "testroutes" or "check-routes" or "test-routes";
+
     public HttpRequestMessage CreateForwardingRequest(string? routeUrl)
     {
         try

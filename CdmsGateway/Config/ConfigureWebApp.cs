@@ -26,7 +26,7 @@ public static class ConfigureWebApp
         builder.Services.AddSingleton<IMessageFork, MessageFork>();
         builder.Services.AddSingleton<IMessageRouter, MessageRouter>();
         builder.Services.AddSingleton<IMessageRoutes, MessageRoutes>();
-
+        builder.Services.AddSingleton<CheckRoutes>();
         builder.Services.AddSingleton<MetricsHost>();
     }
 

@@ -1,3 +1,4 @@
+using Elastic.CommonSchema;
 using ILogger = Serilog.ILogger;
 
 namespace CdmsGateway.Services.Routing;
@@ -6,6 +7,7 @@ public interface IMessageRoutes
 {
     RoutingResult GetRoutedRoute(string routePath);
     RoutingResult GetForkedRoute(string routePath);
+    HealthUrl[] HealthUrls { get; }
 }
 
 public class MessageRoutes : IMessageRoutes
@@ -26,6 +28,7 @@ public class MessageRoutes : IMessageRoutes
 
             _routedRoutes = routingConfig.AllRoutedRoutes.ToDictionary(x => x.Name.ToLower(), x => x.Url.Trim('/'));
             _forkedRoutes = routingConfig.AllForkedRoutes.ToDictionary(x => x.Name.ToLower(), x => x.Url.Trim('/'));
+            HealthUrls = routingConfig.HealthUrls;
         }
         catch (Exception ex)
         {
@@ -34,6 +37,8 @@ public class MessageRoutes : IMessageRoutes
         }
     }
 
+    public HealthUrl[] HealthUrls { get; }
+    
     public RoutingResult GetRoutedRoute(string routePath) => GetRoute(routePath, _routedRoutes);
 
     public RoutingResult GetForkedRoute(string routePath) => GetRoute(routePath, _forkedRoutes);

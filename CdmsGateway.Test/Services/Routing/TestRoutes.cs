@@ -22,6 +22,7 @@ public static class TestRoutes
             new NamedUrl { Name = "url-2", Url = "http://url-2/" },
             new NamedUrl { Name = "url-3", Url = "http://url-3/" },
             new NamedUrl { Name = "url-4", Url = "http://url-4/" },
-        ]
+        ],
+        HealthUrls = []
     };
 }

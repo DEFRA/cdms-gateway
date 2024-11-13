@@ -4,7 +4,7 @@ using ILogger = Serilog.ILogger;
 
 namespace CdmsGateway.Services;
 
-public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter messageRouter, IMessageFork messageFork, MetricsHost metricsHost, ILogger logger)
+public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter messageRouter, IMessageFork messageFork, CheckRoutes checkRoutes, MetricsHost metricsHost, ILogger logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -14,20 +14,26 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
             metrics.StartTotalRequest();
             
             var messageData = await MessageData.Create(context.Request, logger);
+            if (messageData.ShouldCheckRoutes())
+            {
+                await checkRoutes.Check(context.Response);
+                return;
+            }
+
             if (messageData.ShouldProcessRequest())
             {
                 logger.Information("{CorrelationId} Received routing instruction {HttpString} {Content}", messageData.CorrelationId, messageData.HttpString, messageData.ContentAsString);
 
-                #pragma warning disable CS4014 // This call is not awaited as forking of the message should happen asynchronously
+#pragma warning disable CS4014 // This call is not awaited as forking of the message should happen asynchronously
                 Fork(messageData, metrics);
-                #pragma warning restore CS4014
+#pragma warning restore CS4014
 
                 await Route(context, messageData, metrics);
                 
                 metrics.RecordTotalRequest();
                 return;
             }
-            
+
             logger.Information("{CorrelationId} Pass through request {HttpString}", messageData.CorrelationId, messageData.HttpString);
 
             await next(context);

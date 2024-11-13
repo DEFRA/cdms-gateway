@@ -8,6 +8,7 @@ public record RoutingConfig
     public required NamedRoute[] Routes { get; init; } = [];
     public required NamedRoute[] AdditionalRoutes { get; init; } = [];
     public required NamedUrl[] NamedUrls { get; init; } = [];
+    public required HealthUrl[] HealthUrls { get; init; } = [];
 }
 
 public record NamedRoute
@@ -26,5 +27,12 @@ public record NamedUrl
 public record RoutedUrl
 {
     public required string Name { get; init; }
+    public required string Url { get; init; }
+}
+
+public record HealthUrl
+{
+    public required string Name { get; init; }
+    public required string Method { get; init; }
     public required string Url { get; init; }
 }
