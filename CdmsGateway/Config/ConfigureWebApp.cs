@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using CdmsGateway.Services;
+using CdmsGateway.Services.Checking;
 using CdmsGateway.Services.Routing;
 using CdmsGateway.Utils;
 using CdmsGateway.Utils.Http;
@@ -44,6 +45,8 @@ public static class ConfigureWebApp
         app.UseMiddleware<SoapInterceptorMiddleware>();
    
         app.MapHealthChecks("/health");
+        
+        app.UseCheckRoutesEndpoints();
 
         return app;
     }

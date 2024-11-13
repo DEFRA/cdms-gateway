@@ -1,19 +1,16 @@
 using System.Diagnostics;
-using System.Net;
-using System.Net.Mime;
 using System.Runtime.InteropServices;
-using System.Text;
 using CdmsGateway.Services.Routing;
 using CdmsGateway.Utils.Http;
 
-namespace CdmsGateway.Services;
+namespace CdmsGateway.Services.Checking;
 
 public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory clientFactory)
 {
-    public async Task Check(HttpResponse response)
+    public async Task<string> Check()
     {
         var results = await Task.WhenAll(messageRoutes.HealthUrls.Select(Check));
-        await SetResponse(response, results);
+        return string.Join("\r", results);
     }
 
     private async Task<string> Check(HealthUrl healthUrl)
@@ -23,13 +20,6 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
         var response = await client.SendAsync(request);
         var traceRoute = TraceRoute(healthUrl.Url);
         return $"{healthUrl.Name} - {healthUrl.Method} {healthUrl.Url} - {response.StatusCode}\r{traceRoute}";
-    }
-
-    private static async Task SetResponse(HttpResponse response, string[] results)
-    {
-        response.StatusCode = (int)HttpStatusCode.OK;
-        response.ContentType = MediaTypeNames.Text.Plain;
-        await response.BodyWriter.WriteAsync(new ReadOnlyMemory<byte>(Encoding.UTF8.GetBytes(string.Join("\r", results))));
     }
 
     private static string TraceRoute(string url)

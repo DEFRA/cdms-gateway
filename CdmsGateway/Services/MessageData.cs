@@ -2,6 +2,7 @@ using System.Net.Mime;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using CdmsGateway.Services.Checking;
 using CdmsGateway.Services.Routing;
 using ILogger = Serilog.ILogger;
 
@@ -53,9 +54,7 @@ public class MessageData
         }
     }
 
-    public bool ShouldProcessRequest() => !(Method == HttpMethods.Get && Path == "health");
-
-    public bool ShouldCheckRoutes() => Path.ToLower() is "checkroutes" or "testroutes" or "check-routes" or "test-routes";
+    public bool ShouldProcessRequest() => !((Method == HttpMethods.Get && Path.Equals("health", StringComparison.CurrentCultureIgnoreCase)) || CheckRoutesEndpoints.Paths.Contains(Path.ToLower()));
 
     public HttpRequestMessage CreateForwardingRequest(string? routeUrl)
     {

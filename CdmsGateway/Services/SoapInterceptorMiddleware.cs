@@ -1,10 +1,11 @@
+using CdmsGateway.Services.Checking;
 using CdmsGateway.Services.Routing;
 using CdmsGateway.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace CdmsGateway.Services;
 
-public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter messageRouter, IMessageFork messageFork, CheckRoutes checkRoutes, MetricsHost metricsHost, ILogger logger)
+public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter messageRouter, IMessageFork messageFork, MetricsHost metricsHost, ILogger logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -14,11 +15,6 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
             metrics.StartTotalRequest();
             
             var messageData = await MessageData.Create(context.Request, logger);
-            if (messageData.ShouldCheckRoutes())
-            {
-                await checkRoutes.Check(context.Response);
-                return;
-            }
 
             if (messageData.ShouldProcessRequest())
             {
