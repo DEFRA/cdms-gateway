@@ -7,13 +7,10 @@ using ILogger = Serilog.ILogger;
 
 namespace CdmsGateway.Services;
 
-public partial class MessageData
+public class MessageData
 {
     public const string CorrelationIdHeaderName = "X-Correlation-ID";
     public const string RequestedPathHeaderName = "x-requested-path";
-
-    [GeneratedRegex("CHED[A-Z]+")]
-    private static partial Regex RegexChed();
 
     public string CorrelationId { get; }
     public string ContentAsString { get; }
@@ -22,7 +19,7 @@ public partial class MessageData
     public string Path { get; }
     public string Method { get; }
     public string ContentType { get; }
-    public string ChedType { get; }
+    public ContentMap ContentMap { get; }
 
     private readonly ILogger _logger;
     private readonly IHeaderDictionary _headers;
@@ -39,7 +36,7 @@ public partial class MessageData
         try
         {
             ContentAsString = contentAsString;
-            ChedType = RegexChed().Match(contentAsString).Value;
+            ContentMap = new ContentMap(contentAsString);
             Method = request.Method;
             Path = request.Path.HasValue ? request.Path.Value.Trim('/') : string.Empty;
             ContentType = RetrieveContentType(request);
@@ -112,4 +109,13 @@ public partial class MessageData
         var contentTypeParts = request.ContentType?.Split(';');
         return contentTypeParts is { Length: > 0 } ? contentTypeParts[0] : MediaTypeNames.Application.Json;
     }
+}
+
+public partial class ContentMap(string content)
+{
+    [GeneratedRegex("CHED[A-Z]+")] private static partial Regex RegexChed();
+    [GeneratedRegex("DispatchCountryCode>(.+?)<")] private static partial Regex RegexCountry();
+
+    public string ChedType => RegexChed().Match(content).Value;
+    public string CountryCode => RegexCountry().Match(content).Groups[1].Value;
 }
