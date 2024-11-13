@@ -1,37 +1,45 @@
 using CdmsGateway.Services.Routing;
+using CdmsGateway.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace CdmsGateway.Services;
 
-public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter messageRouter, IMessageFork messageFork, ILogger logger)
+public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter messageRouter, IMessageFork messageFork, MetricsHost metricsHost, ILogger logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {
         try
         {
+            var metrics = metricsHost.GetMetrics();
+            metrics.StartTotalRequest();
+            
             var messageData = await MessageData.Create(context.Request, logger);
             if (messageData.ShouldProcessRequest())
             {
                 logger.Information("{CorrelationId} Received routing instruction {HttpString} {Content}", messageData.CorrelationId, messageData.HttpString, messageData.ContentAsString);
 
                 #pragma warning disable CS4014 // This call is not awaited as forking of the message should happen asynchronously
-                Fork(messageData);
+                Fork(messageData, metrics);
                 #pragma warning restore CS4014
 
-                await Route(context, messageData);
+                await Route(context, messageData, metrics);
+                
+                metrics.RecordTotalRequest();
+                return;
             }
             
             logger.Information("{CorrelationId} Pass through request {HttpString}", messageData.CorrelationId, messageData.HttpString);
+
+            await next(context);
         }
         catch (Exception ex)
         {
             logger.Error(ex, "There was a routing error");
+            throw;
         }
-
-        await next(context);
     }
 
-    private async Task Route(HttpContext context, MessageData messageData)
+    private async Task Route(HttpContext context, MessageData messageData, Metrics metrics)
     {
         const string Action = "Routing";
         var routingResult = await messageRouter.Route(messageData);
@@ -39,15 +47,17 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
         if (routingResult.RouteFound)
         {
             CheckResults(messageData, routingResult, Action);
-            if (routingResult.RoutedSuccessfully) await messageData.PopulateResponse(context.Response, routingResult);
+            if (routingResult.RoutingSuccessful) await messageData.PopulateResponse(context.Response, routingResult);
         }
         else
         {
             logger.Information("{CorrelationId} {Action} not supported for [{HttpString}]", messageData.CorrelationId, Action, messageData.HttpString);
         }
+
+        metrics.RequestRouted(messageData, routingResult);
     }
 
-    private async Task Fork(MessageData messageData)
+    private async Task Fork(MessageData messageData, Metrics metrics)
     {
         const string Action = "Forking";
         var routingResult = await messageRouter.Fork(messageData);
@@ -61,11 +71,13 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
         {
             logger.Information("{CorrelationId} {Action} not supported for [{HttpString}]", messageData.CorrelationId, Action, messageData.HttpString);
         }
+        
+        metrics.RequestForked(messageData, routingResult);
     }
 
     private void CheckResults(MessageData messageData, RoutingResult routingResult, string action)
     {
-        if (routingResult.RoutedSuccessfully)
+        if (routingResult.RoutingSuccessful)
         {
             logger.Information("{CorrelationId} {Action} successful for route {RouteUrl} with response {StatusCode} {Content}", messageData.CorrelationId, action, routingResult.RouteUrl, routingResult.StatusCode, routingResult.ResponseContent);
         }
