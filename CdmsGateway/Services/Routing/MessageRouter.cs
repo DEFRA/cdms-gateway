@@ -20,14 +20,14 @@ public class MessageRouter(IHttpClientFactory clientFactory, IMessageRoutes mess
         
         try
         {
-            var metrics = metricsHost.GetMetrics();
+            // var metrics = metricsHost.GetMetrics();
             var client = clientFactory.CreateClient(Proxy.ProxyClient);
             var request = messageData.CreateForwardingRequest(routingResult.RouteUrl);
             
-            metrics.StartRoutedRequest();
+            // metrics.StartRoutedRequest();
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
-            metrics.RecordRoutedRequest();
+            // metrics.RecordRoutedRequest();
             
             return routingResult with { RoutingSuccessful = response.IsSuccessStatusCode, ResponseContent = content, StatusCode = response.StatusCode, ResponseDate = response.Headers.Date };
         }
@@ -45,14 +45,14 @@ public class MessageRouter(IHttpClientFactory clientFactory, IMessageRoutes mess
         
         try
         {
-            var metrics = metricsHost.GetMetrics();
+            // var metrics = metricsHost.GetMetrics();
             var client = clientFactory.CreateClient(Proxy.ProxyClient);
             var request = messageData.CreateForwardingRequest(routingResult.RouteUrl);
             
-            metrics.StartForkedRequest();
+            // metrics.StartForkedRequest();
             var response = await client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
-            metrics.RecordForkedRequest();
+            // metrics.RecordForkedRequest();
             
             return routingResult with { RoutingSuccessful = response.IsSuccessStatusCode, ResponseContent = content, StatusCode = response.StatusCode, ResponseDate = response.Headers.Date };
         }

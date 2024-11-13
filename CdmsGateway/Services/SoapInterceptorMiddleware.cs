@@ -11,7 +11,7 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
         try
         {
             var metrics = metricsHost.GetMetrics();
-            metrics.StartTotalRequest();
+            // metrics.StartTotalRequest();
             
             var messageData = await MessageData.Create(context.Request, logger);
             if (messageData.ShouldProcessRequest())
@@ -24,7 +24,7 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
 
                 await Route(context, messageData, metrics);
                 
-                metrics.RecordTotalRequest();
+                // metrics.RecordTotalRequest();
                 return;
             }
             
