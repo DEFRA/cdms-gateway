@@ -62,10 +62,12 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
     private IEnumerable<(PingReply? Reply, TimeSpan Elapsed)> GetTraceRoute(string hostname)
     {
         const int BufferSize = 32;
+        const int MaxPingErrors = 3;
 
         var buffer = new byte[BufferSize];
         new Random().NextBytes(buffer);
         var stopwatch = new Stopwatch();
+        var pingErrors = 0;
 
         using var pinger = new Ping();
         for (var ttl = 1; ttl <= MaxHops; ttl++)
@@ -78,15 +80,18 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
                 stopwatch.Restart();
                 reply = pinger.Send(hostname, Timeout, buffer, options);
                 stopwatch.Stop();
+                pingErrors += reply.Status == IPStatus.TimedOut ? 1 : 0;
                 logger.Information("Successfully pinged {Hop} {Host} in {Elapsed} ms", ttl, hostname, stopwatch.Elapsed.TotalMicroseconds);
             }
             catch
             {
                 stopwatch.Stop();
                 logger.Information("Failed to ping {Hop} {Host} in {Elapsed} ms", ttl, hostname, stopwatch.Elapsed.TotalMicroseconds);
+                pingErrors++;
                 reply = null;
             }
-
+            if (pingErrors == MaxPingErrors) break;
+            
             // we've found a route at this ttl
             if (reply is not { Status: not (IPStatus.Success or IPStatus.TtlExpired) })
                 yield return (reply, stopwatch.Elapsed);
