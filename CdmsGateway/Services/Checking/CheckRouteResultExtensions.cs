@@ -15,5 +15,5 @@ public static class CheckRouteResultExtensions
 
     private static string FormatHopResult(this HopResult result) => $"{result.HopNum,3}  {result.Host?.HostName ?? "* * *"} [{result.IpAddress?.ToString() ?? "* * *"}]  {result.Elapsed.TotalMilliseconds:0.###} ms";
 
-    private static string FormatTraceRouteFirstLine(this CheckRouteResult result) => $"{result.RouteName} - {result.RouteMethod} {result.RouteUrl} - {result.RequestResponse}";
+    private static string FormatTraceRouteFirstLine(this CheckRouteResult result) => $"{result.RouteName} - {result.RouteMethod} {result.RouteUrl} - {result.ResponseResult}";
 }

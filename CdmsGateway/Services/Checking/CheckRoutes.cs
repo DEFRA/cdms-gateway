@@ -19,30 +19,44 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
 
     private async Task<CheckRouteResult> Check(HealthUrl healthUrl)
     {
-        string requestResponse;
+        var checkRouteResult = new CheckRouteResult(healthUrl);
+
+        await Task.WhenAll(
+            CheckHttpRequest(healthUrl, checkRouteResult),
+            CheckIpRouting(checkRouteResult));
+        
+        return checkRouteResult;
+    }
+
+    private async Task CheckHttpRequest(HealthUrl healthUrl, CheckRouteResult checkRouteResult)
+    {
         try
         {
             logger.Information("Start checking HTTP request for {Url}", healthUrl.Url);
             var client = clientFactory.CreateClient(Proxy.ProxyClientWithoutRetry);
             var request = new HttpRequestMessage(new HttpMethod(healthUrl.Method), healthUrl.Url);
             var response = await client.SendAsync(request);
-            requestResponse = response.StatusCode.ToString();
+            checkRouteResult.ResponseResult = response.StatusCode.ToString();
         }
         catch (Exception ex)
         {
-            requestResponse = $"\"{ex.Message}\"";
+            checkRouteResult.ResponseResult = $"\"{ex.Message}\"";
         }
-        logger.Information("Completed checking HTTP request for {Url} with result {Result}", healthUrl.Url, requestResponse);
-
-        var checkRouteResult = new CheckRouteResult(healthUrl, requestResponse);
-        if (!checkRouteResult.IsValidUrl) return checkRouteResult;
-
-        logger.Information("Start discovering trace for {Host}", checkRouteResult.HostName);
-        foreach (var hopResult in GetTraceRoute(checkRouteResult.HostName))
-            checkRouteResult.AddHopResult(hopResult.Reply, hopResult.Elapsed);
-        logger.Information("Completed discovering trace for {Host} in {Elapsed} ms", checkRouteResult.HostName, checkRouteResult.HopResults.Sum(x => x.Elapsed.TotalMicroseconds));
         
-        return checkRouteResult;
+        logger.Information("Completed checking HTTP request for {Url} with result {Result}", healthUrl.Url, checkRouteResult.ResponseResult);
+    }
+
+    private Task CheckIpRouting(CheckRouteResult checkRouteResult)
+    {
+        if (checkRouteResult.IsValidUrl)
+        {
+            logger.Information("Start discovering trace for {Host}", checkRouteResult.HostName);
+            foreach (var hopResult in GetTraceRoute(checkRouteResult.HostName))
+                checkRouteResult.AddHopResult(hopResult.Reply, hopResult.Elapsed);
+            logger.Information("Completed discovering trace for {Host} in {Elapsed} ms", checkRouteResult.HostName, checkRouteResult.HopResults.Sum(x => x.Elapsed.TotalMicroseconds));
+        }
+
+        return Task.CompletedTask;
     }
 
     private IEnumerable<(PingReply? Reply, TimeSpan Elapsed)> GetTraceRoute(string hostname)

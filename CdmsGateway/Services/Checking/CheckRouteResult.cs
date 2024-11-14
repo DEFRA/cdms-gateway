@@ -12,16 +12,15 @@ public class CheckRouteResult
     public string RouteName => _healthUrl.Name;
     public string RouteMethod => _healthUrl.Method;
     public string RouteUrl => _healthUrl.Url;
-    public string RequestResponse { get; }
+    public string? ResponseResult { get; set;  }
     public bool IsValidUrl { get; }
     public string[] IpAddresses { get; } = [];
     public string HostName { get; } = string.Empty;
     public List<HopResult> HopResults { get; } = new();
 
-    public CheckRouteResult(HealthUrl healthUrl, string requestResponse)
+    public CheckRouteResult(HealthUrl healthUrl)
     {
         _healthUrl = healthUrl;
-        RequestResponse = requestResponse;
         IsValidUrl = Uri.TryCreate(healthUrl.Url, UriKind.Absolute, out var uri);
         if (!IsValidUrl) return;
         
