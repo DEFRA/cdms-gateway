@@ -8,7 +8,7 @@ namespace CdmsGateway.Services.Checking;
 
 public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory clientFactory, ILogger logger)
 {
-    public const int OverallTimeoutSecs = 50;
+    public const int OverallTimeoutSecs = 40;
     public const int HopTimeoutMs = 5000;
     public const int MaxHops = 20;
 
