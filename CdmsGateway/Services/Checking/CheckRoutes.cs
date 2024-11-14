@@ -2,16 +2,18 @@ using System.Diagnostics;
 using System.Net.NetworkInformation;
 using CdmsGateway.Services.Routing;
 using CdmsGateway.Utils.Http;
+using ILogger = Serilog.ILogger;
 
 namespace CdmsGateway.Services.Checking;
 
-public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory clientFactory)
+public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory clientFactory, ILogger logger)
 {
     public const int Timeout = 2000;
     public const int MaxHops = 20;
 
     public async Task<IEnumerable<CheckRouteResult>> Check()
     {
+        logger.Information("Start route checking");
         return await Task.WhenAll(messageRoutes.HealthUrls.Select(Check));
     }
 
@@ -20,7 +22,8 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
         string requestResponse;
         try
         {
-            var client = clientFactory.CreateClient(Proxy.ProxyClient);
+            logger.Information("Start checking HTTP request for {Url}", healthUrl.Url);
+            var client = clientFactory.CreateClient(Proxy.ProxyClientWithoutRetry);
             var request = new HttpRequestMessage(new HttpMethod(healthUrl.Method), healthUrl.Url);
             var response = await client.SendAsync(request);
             requestResponse = response.StatusCode.ToString();
@@ -29,17 +32,20 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
         {
             requestResponse = $"\"{ex.Message}\"";
         }
+        logger.Information("Completed checking HTTP request for {Url} with result {Result}", healthUrl.Url, requestResponse);
 
         var checkRouteResult = new CheckRouteResult(healthUrl, requestResponse);
         if (!checkRouteResult.IsValidUrl) return checkRouteResult;
 
+        logger.Information("Start discovering trace for {Host}", checkRouteResult.HostName);
         foreach (var hopResult in GetTraceRoute(checkRouteResult.HostName))
             checkRouteResult.AddHopResult(hopResult.Reply, hopResult.Elapsed);
+        logger.Information("Completed discovering trace for {Host} in {Elapsed} ms", checkRouteResult.HostName, checkRouteResult.HopResults.Sum(x => x.Elapsed.TotalMicroseconds));
         
         return checkRouteResult;
     }
 
-    private static IEnumerable<(PingReply? Reply, TimeSpan Elapsed)> GetTraceRoute(string hostname)
+    private IEnumerable<(PingReply? Reply, TimeSpan Elapsed)> GetTraceRoute(string hostname)
     {
         const int BufferSize = 32;
 
@@ -58,10 +64,12 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
                 stopwatch.Restart();
                 reply = pinger.Send(hostname, Timeout, buffer, options);
                 stopwatch.Stop();
+                logger.Information("Successfully pinged {Hop} {Host} in {Elapsed} ms", ttl, hostname, stopwatch.Elapsed.TotalMicroseconds);
             }
             catch
             {
                 stopwatch.Stop();
+                logger.Information("Failed to ping {Hop} {Host} in {Elapsed} ms", ttl, hostname, stopwatch.Elapsed.TotalMicroseconds);
                 reply = null;
             }
 
