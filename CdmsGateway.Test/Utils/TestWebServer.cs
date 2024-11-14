@@ -32,7 +32,7 @@ public class TestWebServer : IAsyncDisposable
         foreach (var testService in testServices) builder.Services.Replace(testService);
         builder.ConfigureEndpoints();
 
-        ConfigureWebApp.HttpProxyClientBuilder?.AddHttpMessageHandler(() => OutboundTestHttpHandler);
+        ConfigureWebApp.HttpProxyClientWithRetryBuilder?.AddHttpMessageHandler(() => OutboundTestHttpHandler);
 
         _app = builder.BuildWebApplication();
         Services = _app.Services;

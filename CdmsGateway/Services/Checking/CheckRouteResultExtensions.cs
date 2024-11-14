@@ -9,7 +9,7 @@ public static class CheckRouteResultExtensions
 
     private static string FormatValidTraceRoute(this CheckRouteResult result) => $"{result.FormatTraceRouteFirstLine()}\r" +
                                                                                  $"Trace to {result.HostName} [{string.Join(' ', result.IpAddresses)}], " +
-                                                                                 $"{CheckRoutes.MaxHops} hops max, {CheckRoutes.Timeout/1000:0.0##} s timeout.  " +
+                                                                                 $"{CheckRoutes.MaxHops} hops max, {CheckRoutes.Timeout/1000:0.###} sec timeout.  " +
                                                                                  $"Total elapsed {result.HopResults.Sum(x => x.Elapsed.TotalMilliseconds):0.###} ms\r" +
                                                                                  $"{string.Join('\r', result.HopResults.Select(FormatHopResult))}\r";
 

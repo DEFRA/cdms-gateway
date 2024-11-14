@@ -13,7 +13,7 @@ namespace CdmsGateway.Config;
 
 public static class ConfigureWebApp
 {
-    public static IHttpClientBuilder? HttpProxyClientBuilder;
+    public static IHttpClientBuilder? HttpProxyClientWithRetryBuilder;
 
     [ExcludeFromCodeCoverage]
     public static void AddServices(this WebApplicationBuilder builder, ILogger logger)
@@ -21,7 +21,7 @@ public static class ConfigureWebApp
         builder.Services.AddSingleton(logger);
         builder.ConfigureToType<RoutingConfig>("Routing");
 
-        HttpProxyClientBuilder = builder.Services.AddHttpProxyClient(logger).AddPolicyHandler(_ => HttpPolicyExtensions.HandleTransientHttpError().WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(100)));
+        HttpProxyClientWithRetryBuilder = builder.Services.AddHttpProxyClientWithRetry(logger).AddPolicyHandler(_ => HttpPolicyExtensions.HandleTransientHttpError().WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(100)));
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
         builder.Services.AddSingleton<IMessageFork, MessageFork>();

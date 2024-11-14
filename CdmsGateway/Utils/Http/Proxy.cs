@@ -5,7 +5,8 @@ namespace CdmsGateway.Utils.Http;
 
 public static class Proxy
 {
-   public const string ProxyClient = "proxy";
+   public const string ProxyClientWithoutRetry = "proxy";
+   public const string ProxyClientWithRetry = "proxy-with-retry";
 
    /**
     * A preconfigured HTTP Client that uses the Platform's outbound proxy.
@@ -16,9 +17,15 @@ public static class Proxy
     *     `clientFactory.CreateClient(Proxy.ProxyClient);`
     */
    [ExcludeFromCodeCoverage]
-   public static IHttpClientBuilder AddHttpProxyClient(this IServiceCollection services, Serilog.ILogger logger)
+   public static IHttpClientBuilder AddHttpProxyClientWithoutRetry(this IServiceCollection services, Serilog.ILogger logger)
    {
-      return services.AddHttpClient(ProxyClient).ConfigurePrimaryHttpMessageHandler(() => ConfigurePrimaryHttpMessageHandler(logger));
+      return services.AddHttpClient(ProxyClientWithoutRetry).ConfigurePrimaryHttpMessageHandler(() => ConfigurePrimaryHttpMessageHandler(logger));
+   }
+   
+   [ExcludeFromCodeCoverage]
+   public static IHttpClientBuilder AddHttpProxyClientWithRetry(this IServiceCollection services, Serilog.ILogger logger)
+   {
+      return services.AddHttpClient(ProxyClientWithRetry).ConfigurePrimaryHttpMessageHandler(() => ConfigurePrimaryHttpMessageHandler(logger));
    }
 
    [ExcludeFromCodeCoverage]
