@@ -8,34 +8,36 @@ namespace CdmsGateway.Services.Checking;
 
 public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory clientFactory, ILogger logger)
 {
-    public const int Timeout = 2000;
+    public const int OverallTimeoutSecs = 50;
+    public const int HopTimeoutMs = 5000;
     public const int MaxHops = 20;
 
     public async Task<IEnumerable<CheckRouteResult>> Check()
     {
         logger.Information("Start route checking");
-        return await Task.WhenAll(messageRoutes.HealthUrls.Select(Check));
+        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(OverallTimeoutSecs));
+        return await Task.WhenAll(messageRoutes.HealthUrls.Select(healthUrl => Check(healthUrl, cts)));
     }
 
-    private async Task<CheckRouteResult> Check(HealthUrl healthUrl)
+    private async Task<CheckRouteResult> Check(HealthUrl healthUrl, CancellationTokenSource cts)
     {
         var checkRouteResult = new CheckRouteResult(healthUrl);
 
         await Task.WhenAll(
-            CheckHttpRequest(healthUrl, checkRouteResult),
-            CheckIpRouting(checkRouteResult));
+            CheckHttpRequest(healthUrl, checkRouteResult, cts),
+            CheckIpRouting(checkRouteResult, cts));
         
         return checkRouteResult;
     }
 
-    private async Task CheckHttpRequest(HealthUrl healthUrl, CheckRouteResult checkRouteResult)
+    private async Task CheckHttpRequest(HealthUrl healthUrl, CheckRouteResult checkRouteResult, CancellationTokenSource cts)
     {
         try
         {
             logger.Information("Start checking HTTP request for {Url}", healthUrl.Url);
             var client = clientFactory.CreateClient(Proxy.ProxyClientWithoutRetry);
             var request = new HttpRequestMessage(new HttpMethod(healthUrl.Method), healthUrl.Url);
-            var response = await client.SendAsync(request);
+            var response = await client.SendAsync(request, cts.Token);
             checkRouteResult.ResponseResult = response.StatusCode.ToString();
         }
         catch (Exception ex)
@@ -46,14 +48,18 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
         logger.Information("Completed checking HTTP request for {Url} with result {Result}", healthUrl.Url, checkRouteResult.ResponseResult);
     }
 
-    private Task CheckIpRouting(CheckRouteResult checkRouteResult)
+    private Task CheckIpRouting(CheckRouteResult checkRouteResult, CancellationTokenSource cts)
     {
         if (checkRouteResult.IsValidUrl)
         {
+            var cancellationToken = cts.Token;
             logger.Information("Start discovering trace for {Host}", checkRouteResult.HostName);
             foreach (var hopResult in GetTraceRoute(checkRouteResult.HostName))
+            {
                 checkRouteResult.AddHopResult(hopResult.Reply, hopResult.Elapsed);
-            logger.Information("Completed discovering trace for {Host} in {Elapsed} ms", checkRouteResult.HostName, checkRouteResult.HopResults.Sum(x => x.Elapsed.TotalMicroseconds));
+                if (cancellationToken.IsCancellationRequested) break;
+            }
+            logger.Information("Completed discovering trace for {Host}", checkRouteResult.HostName);
         }
 
         return Task.CompletedTask;
@@ -78,19 +84,19 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
             try
             {
                 stopwatch.Restart();
-                reply = pinger.Send(hostname, Timeout, buffer, options);
+                reply = pinger.Send(hostname, HopTimeoutMs, buffer, options);
                 stopwatch.Stop();
                 pingErrors += reply.Status == IPStatus.TimedOut ? 1 : 0;
-                logger.Information("Successfully pinged {Hop} {Host} in {Elapsed} ms", ttl, hostname, stopwatch.Elapsed.TotalMicroseconds);
+                logger.Information("Successfully pinged {Hop} {Host}", ttl, hostname);
             }
             catch
             {
                 stopwatch.Stop();
-                logger.Information("Failed to ping {Hop} {Host} in {Elapsed} ms", ttl, hostname, stopwatch.Elapsed.TotalMicroseconds);
+                logger.Information("Failed to ping {Hop} {Host}", ttl, hostname);
                 pingErrors++;
                 reply = null;
             }
-            if (pingErrors == MaxPingErrors) break;
+            if (pingErrors > MaxPingErrors) break;
             
             // we've found a route at this ttl
             if (reply is not { Status: not (IPStatus.Success or IPStatus.TtlExpired) })
