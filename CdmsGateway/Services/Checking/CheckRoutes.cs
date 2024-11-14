@@ -7,7 +7,7 @@ namespace CdmsGateway.Services.Checking;
 
 public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory clientFactory)
 {
-    public const int Timeout = 10000;
+    public const int Timeout = 5000;
     public const int MaxHops = 30;
 
     public async Task<IEnumerable<CheckRouteResult>> Check()
@@ -56,7 +56,6 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
             try
             {
                 stopwatch.Restart();
-                if (ttl == 4) throw new Exception("Ping failed!!");
                 reply = pinger.Send(hostname, Timeout, buffer, options);
                 stopwatch.Stop();
             }

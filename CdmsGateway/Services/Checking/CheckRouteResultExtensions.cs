@@ -8,7 +8,9 @@ public static class CheckRouteResultExtensions
                                                                                    $"Unable to perform trace due to invalid URL\r";
 
     private static string FormatValidTraceRoute(this CheckRouteResult result) => $"{result.FormatTraceRouteFirstLine()}\r" +
-                                                                                 $"Trace to {result.HostName} [{string.Join(' ', result.IpAddresses)}], {CheckRoutes.MaxHops} hops max, {CheckRoutes.Timeout/1000:0.###} secs timeout.\r" +
+                                                                                 $"Trace to {result.HostName} [{string.Join(' ', result.IpAddresses)}], " +
+                                                                                 $"{CheckRoutes.MaxHops} hops max, {CheckRoutes.Timeout/1000:0.###} s timeout.  " +
+                                                                                 $"Total elapsed {result.HopResults.Sum(x => x.Elapsed.TotalMilliseconds):0.###} ms\r" +
                                                                                  $"{string.Join('\r', result.HopResults.Select(FormatHopResult))}\r";
 
     private static string FormatHopResult(this HopResult result) => $"{result.HopNum,3}  {result.Host?.HostName ?? "* * *"} [{result.IpAddress?.ToString() ?? "* * *"}]  {result.Elapsed.TotalMilliseconds:0.###} ms";
