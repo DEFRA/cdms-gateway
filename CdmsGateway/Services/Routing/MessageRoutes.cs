@@ -1,4 +1,3 @@
-using Elastic.CommonSchema;
 using ILogger = Serilog.ILogger;
 
 namespace CdmsGateway.Services.Routing;

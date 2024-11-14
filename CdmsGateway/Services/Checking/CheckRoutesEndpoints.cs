@@ -9,12 +9,15 @@ public static class CheckRoutesEndpoints
     public static void UseCheckRoutesEndpoints(this IEndpointRouteBuilder app)
     {
         foreach (var path in Paths)
+        {
             app.MapGet(path, CheckRoutes).AllowAnonymous();
+            app.MapPost(path, CheckRoutes).AllowAnonymous();
+        }
     }
 
     private static async Task<IResult> CheckRoutes(HttpContext context, RoutingConfig routingConfig, CheckRoutes checkRoutes)
     {
-        var result = await checkRoutes.Check();
-        return TypedResults.Text(result);
+        var results = await checkRoutes.Check();
+        return TypedResults.Text(results.FormatTraceRoutes());
     }
 }
