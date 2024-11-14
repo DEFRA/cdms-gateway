@@ -54,7 +54,9 @@ public class MessageData
         }
     }
 
-    public bool ShouldProcessRequest() => !((Method == HttpMethods.Get && Path.Equals("health", StringComparison.CurrentCultureIgnoreCase)) || CheckRoutesEndpoints.Paths.Contains(Path.ToLower()));
+    public bool ShouldProcessRequest() => !(Method == HttpMethods.Get
+                                            && (Path.Equals("health", StringComparison.CurrentCultureIgnoreCase)
+                                                || Path.Equals(CheckRoutesEndpoints.Path, StringComparison.CurrentCultureIgnoreCase)));
 
     public HttpRequestMessage CreateForwardingRequest(string? routeUrl)
     {

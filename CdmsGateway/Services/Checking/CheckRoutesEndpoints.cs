@@ -1,23 +1,19 @@
-using CdmsGateway.Services.Routing;
-
 namespace CdmsGateway.Services.Checking;
 
 public static class CheckRoutesEndpoints
 {
-    public static readonly string[] Paths = ["testroutes", "test-routes", "checkroutes", "check-routes"];
+    public const string Path = "checkroutes";
     
     public static void UseCheckRoutesEndpoints(this IEndpointRouteBuilder app)
     {
-        foreach (var path in Paths)
-        {
-            app.MapGet(path, CheckRoutes).AllowAnonymous();
-            app.MapPost(path, CheckRoutes).AllowAnonymous();
-        }
+        app.MapGet(Path, CheckRoutes).AllowAnonymous();
     }
 
-    private static async Task<IResult> CheckRoutes(HttpContext context, RoutingConfig routingConfig, CheckRoutes checkRoutes)
+    private static async Task<IResult> CheckRoutes(CheckRoutes checkRoutes)
     {
         var results = await checkRoutes.Check();
-        return TypedResults.Text(results.FormatTraceRoutes());
+        
+        return TypedResults.Text($"Maximum time for all tracing {Checking.CheckRoutes.OverallTimeoutSecs} secs.\r\r" +
+                                 $"{string.Join('\r', results.Select(result => $"{result.RouteName} - {result.RouteMethod} {result.RouteUrl} - {result.ResponseResult}\r"))}");
     }
 }
