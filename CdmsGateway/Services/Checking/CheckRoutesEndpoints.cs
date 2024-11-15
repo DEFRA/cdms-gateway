@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace CdmsGateway.Services.Checking;
 
 public static class CheckRoutesEndpoints
@@ -16,7 +14,7 @@ public static class CheckRoutesEndpoints
     {
         var results = await checkRoutes.Check();
         return TypedResults.Text($"Maximum time for all tracing {Checking.CheckRoutes.OverallTimeoutSecs} secs.\r\r" +
-                                 $"{string.Join('\r', results.Select(result => $"{result.RouteName} - {result.RouteMethod} {result.RouteUrl} - {result.ResponseResult}\r"))}");
+                                 $"{string.Join('\r', results.Select(result => $"{result.RouteName} - {result.RouteMethod} {result.RouteUrl} - {result.ResponseResult} - {result.Elapsed.TotalMilliseconds:#,##0.###} ms\r"))}");
     }
 
     private static async Task<IResult> CheckRoutesAsJson(CheckRoutes checkRoutes)
