@@ -56,6 +56,7 @@ public class MessageData
 
     public bool ShouldProcessRequest() => !(Method == HttpMethods.Get
                                             && (Path.Equals("health", StringComparison.CurrentCultureIgnoreCase)
+                                                || Path.StartsWith("swagger", StringComparison.CurrentCultureIgnoreCase)
                                                 || Path.StartsWith(CheckRoutesEndpoints.Path, StringComparison.CurrentCultureIgnoreCase)));
 
     public HttpRequestMessage CreateForwardingRequest(string? routeUrl)
