@@ -19,11 +19,11 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
             {
                 logger.Information("{CorrelationId} Received routing instruction {HttpString} {Content}", messageData.CorrelationId, messageData.HttpString, messageData.ContentAsString);
 
+                await Route(context, messageData, metrics);
+
 #pragma warning disable CS4014 // This call is not awaited as forking of the message should happen asynchronously
                 Fork(messageData, metrics);
 #pragma warning restore CS4014
-
-                await Route(context, messageData, metrics);
                 
                 metrics.RecordTotalRequest();
                 return;
