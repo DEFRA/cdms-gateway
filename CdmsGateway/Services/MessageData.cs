@@ -66,7 +66,7 @@ public class MessageData
             var request = new HttpRequestMessage(new HttpMethod(Method), routeUrl);
             foreach (var header in _headers.Where(x => !x.Key.StartsWith("Content-") && x.Key != "Host" && x.Key != CorrelationIdHeaderName))
             {
-                request.Headers.Add(header.Key, header.Value.ToArray());
+                // request.Headers.Add(header.Key, header.Value.ToArray());
                 foreach (var value in header.Value)
                     _logger.Information("Header: {Key} = {Value}", header.Key, value);
             }
