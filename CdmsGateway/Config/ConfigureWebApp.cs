@@ -22,7 +22,8 @@ public static class ConfigureWebApp
         builder.ConfigureToType<RoutingConfig>("Routing");
 
         HttpProxyClientWithRetryBuilder = builder.Services.AddHttpProxyClientWithoutRetry(logger);
-        HttpProxyClientWithRetryBuilder = builder.Services.AddHttpProxyClientWithRetry(logger).AddPolicyHandler(_ => HttpPolicyExtensions.HandleTransientHttpError().WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(100)));
+        HttpProxyClientWithRetryBuilder = builder.Services.AddHttpProxyClientWithRetry(logger)
+                                                          .AddPolicyHandler(_ => HttpPolicyExtensions.HandleTransientHttpError().WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(100)));
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
         builder.Services.AddSingleton<IMessageFork, MessageFork>();
