@@ -21,7 +21,7 @@ public class MessageRouter(IHttpClientFactory clientFactory, IMessageRoutes mess
         try
         {
             var metrics = metricsHost.GetMetrics();
-            var client = clientFactory.CreateClient(Proxy.ProxyClientWithRetry);
+            var client = clientFactory.CreateClient(Proxy.ProxyClientWithoutRetry);
             var request = messageData.CreateForwardingRequest(routingResult.RouteUrl);
             
             metrics.StartRoutedRequest();
