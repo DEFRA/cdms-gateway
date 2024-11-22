@@ -9,6 +9,25 @@ public interface IMessageRoutes
     HealthUrl[] HealthUrls { get; }
 }
 
+static class RepeatedExtension
+{
+    public static IEnumerable<TResult> Repeated<TSource, TResult>(this IEnumerable<TSource> source, Func<TSource, TResult> selector) where TResult : notnull
+    {
+        var distinct = new Dictionary<TResult, int>();
+        foreach (var sourceItem in source)
+        {
+            var item = selector(sourceItem);
+            if (!distinct.ContainsKey(item))
+                distinct.Add(item, 1);
+            else
+            {
+                if (distinct[item]++ == 1) // only yield items on first repeated occurence
+                    yield return item;
+            }                    
+        }
+    }
+}
+
 public class MessageRoutes : IMessageRoutes
 {
     private readonly ILogger _logger;
@@ -20,8 +39,12 @@ public class MessageRoutes : IMessageRoutes
         _logger = logger;
         try
         {
-            if (routingConfig.AllRoutedRoutes.Length != routingConfig.AllRoutedRoutes.Select(x => x.Name).Distinct().Count()) throw new InvalidDataException("Duplicate routed route name");
-            if (routingConfig.AllForkedRoutes.Length != routingConfig.AllForkedRoutes.Select(x => x.Name).Distinct().Count()) throw new InvalidDataException("Duplicate forked route name");
+            var repeatedRoutes = routingConfig.AllRoutedRoutes.Repeated(r => r.Name).ToArray();
+            var repeatedForks = routingConfig.AllForkedRoutes.Repeated(r => r.Name).ToArray();
+            
+            if (repeatedRoutes.Length > 0) throw new InvalidDataException($"Duplicate routed route name(s) {repeatedRoutes}");
+            if (repeatedForks.Length > 0) throw new InvalidDataException($"Duplicate forked route name(s) {repeatedForks}");
+            
             if (routingConfig.AllRoutedRoutes.Any(x => !Uri.TryCreate(x.Url, UriKind.Absolute, out _))) throw new InvalidDataException("Routed URL invalid");
             if (routingConfig.AllForkedRoutes.Any(x => !Uri.TryCreate(x.Url, UriKind.Absolute, out _))) throw new InvalidDataException("Forked URL invalid");
 
