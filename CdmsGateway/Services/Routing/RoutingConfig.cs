@@ -32,6 +32,7 @@ public record RoutedUrl
 
 public record HealthUrl
 {
+    public required bool Disabled { get; init; }
     public required string Name { get; init; }
     public required string Method { get; init; }
     public required string Url { get; init; }
