@@ -19,6 +19,12 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
     private async Task<CheckRouteResult> Check(HealthUrl healthUrl, CancellationTokenSource cts)
     {
         CheckRouteResult checkRouteResult;
+
+        if (healthUrl.Disabled)
+        {
+            return new CheckRouteResult(healthUrl, "Disabled", TimeSpan.Zero);
+        }
+        
         var stopwatch = new Stopwatch();
 
         try

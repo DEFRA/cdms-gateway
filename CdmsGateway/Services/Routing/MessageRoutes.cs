@@ -42,8 +42,8 @@ public class MessageRoutes : IMessageRoutes
             var repeatedRoutes = routingConfig.AllRoutedRoutes.Repeated(r => r.Name).ToArray();
             var repeatedForks = routingConfig.AllForkedRoutes.Repeated(r => r.Name).ToArray();
             
-            if (repeatedRoutes.Length > 0) throw new InvalidDataException($"Duplicate routed route name {repeatedRoutes}");
-            if (repeatedForks.Length > 0) throw new InvalidDataException($"Duplicate forked route name {repeatedForks}");
+            if (repeatedRoutes.Length > 0) throw new InvalidDataException($"Duplicate routed route name(s) {repeatedRoutes}");
+            if (repeatedForks.Length > 0) throw new InvalidDataException($"Duplicate forked route name(s) {repeatedForks}");
             
             if (routingConfig.AllRoutedRoutes.Any(x => !Uri.TryCreate(x.Url, UriKind.Absolute, out _))) throw new InvalidDataException("Routed URL invalid");
             if (routingConfig.AllForkedRoutes.Any(x => !Uri.TryCreate(x.Url, UriKind.Absolute, out _))) throw new InvalidDataException("Forked URL invalid");
