@@ -22,7 +22,7 @@ public class SoapInterceptorMiddleware(RequestDelegate next, IMessageRouter mess
                 await Route(context, messageData, metrics);
 
 #pragma warning disable CS4014 // This call is not awaited as forking of the message should happen asynchronously
-                Fork(messageData, metrics);
+                await Fork(messageData, metrics);
 #pragma warning restore CS4014
                 
                 metrics.RecordTotalRequest();
