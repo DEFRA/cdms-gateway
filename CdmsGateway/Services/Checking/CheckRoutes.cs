@@ -21,7 +21,11 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
         if (healthUrl.Disabled)
             return [new CheckRouteResult(healthUrl.Name, $"{healthUrl.Method} {healthUrl.Url}", string.Empty, "Disabled", TimeSpan.Zero)];
         
-        var checks = new List<Task<CheckRouteResult>> { CheckHttp(healthUrl, cts) };
+        var checks = new List<Task<CheckRouteResult>>
+        {
+            CheckHttp(healthUrl, cts),
+            CheckNsLookup(healthUrl with { CheckType = "nslookup" }, cts)
+        };
         if (healthUrl.Uri.PathAndQuery != "/") checks.Add(CheckHttp(healthUrl with { CheckType = "HTTP HOST", Url = healthUrl.Url.Replace(healthUrl.Uri.PathAndQuery, "")}, cts));
         
         return await Task.WhenAll(checks);
@@ -54,14 +58,14 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
 
     private Task<CheckRouteResult> CheckNsLookup(HealthUrl healthUrl, CancellationTokenSource cts)
     {
-        var checkRouteResult = new CheckRouteResult(healthUrl.Name, healthUrl.Uri.Host, "NSLOOKUP", string.Empty, TimeSpan.Zero);
+        var checkRouteResult = new CheckRouteResult(healthUrl.Name, healthUrl.Uri.Host, "nslookup", string.Empty, TimeSpan.Zero);
         var stopwatch = new Stopwatch();
 
         try
         {
-            logger.Information("Start checking NSLOOKUP for {Url}", healthUrl.Url);
+            logger.Information("Start checking nslookup for {Url}", healthUrl.Url);
 
-            var processOutput = RunProcess("NSLOOKUP", healthUrl.Uri.Host);
+            var processOutput = RunProcess("nslookup", healthUrl.Uri.Host);
             checkRouteResult = checkRouteResult with { ResponseResult = $"{processOutput}", Elapsed = stopwatch.Elapsed };
         }
         catch (Exception ex)
@@ -70,7 +74,7 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
         }
         
         stopwatch.Stop();
-        logger.Information("Completed checking NSLOOKUP for {Url} with result {Result}", healthUrl.Url, checkRouteResult.ResponseResult);
+        logger.Information("Completed checking nslookup for {Url} with result {Result}", healthUrl.Url, checkRouteResult.ResponseResult);
         
         return Task.FromResult(checkRouteResult);
     }
@@ -89,10 +93,8 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
             
         using var process = Process.Start(startInfo);
         using var outputReader = process?.StandardOutput;
-        using var errorReader = process?.StandardError;
+        //using var errorReader = process?.StandardError;
         var readToEnd = outputReader?.ReadToEnd();
-        Console.WriteLine(readToEnd.Count(c => c == '\r'));
-        Console.WriteLine(readToEnd.Count(c => c == '\n'));
-        return $"{readToEnd} {errorReader?.ReadToEnd()}".Replace("\r\n", "\n").Replace("\n\n", "\n").Trim(' ', '\n');
+        return $"{readToEnd}".Replace("\r\n", "\n").Replace("\n\n", "\n").Trim(' ', '\n');
     }
 }
