@@ -21,11 +21,7 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
         if (healthUrl.Disabled)
             return [new CheckRouteResult(healthUrl.Name, $"{healthUrl.Method} {healthUrl.Url}", string.Empty, "Disabled", TimeSpan.Zero)];
         
-        var checks = new List<Task<CheckRouteResult>>
-        {
-            CheckHttp(healthUrl, cts),
-            CheckNsLookup(healthUrl with { CheckType = "nslookup" }, cts)
-        };
+        var checks = new List<Task<CheckRouteResult>> { CheckHttp(healthUrl, cts) };
         if (healthUrl.Uri.PathAndQuery != "/") checks.Add(CheckHttp(healthUrl with { CheckType = "HTTP HOST", Url = healthUrl.Url.Replace(healthUrl.Uri.PathAndQuery, "")}, cts));
         
         return await Task.WhenAll(checks);
