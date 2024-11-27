@@ -34,6 +34,8 @@ public record HealthUrl
 {
     public required bool Disabled { get; init; }
     public required string Name { get; init; }
+    public required string CheckType { get; init; } = "HTTP";
     public required string Method { get; init; }
     public required string Url { get; init; }
+    public Uri Uri => new(Url);
 }

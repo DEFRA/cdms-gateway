@@ -13,8 +13,8 @@ public static class CheckRoutesEndpoints
     private static async Task<IResult> CheckRoutes(CheckRoutes checkRoutes)
     {
         var results = await checkRoutes.Check();
-        return TypedResults.Text($"Maximum time for all tracing {Checking.CheckRoutes.OverallTimeoutSecs} secs.\r\r" +
-                                 $"{string.Join('\r', results.Select(result => $"{result.RouteName} - {result.RouteMethod} {result.RouteUrl} - {result.ResponseResult} - {result.Elapsed.TotalMilliseconds:#,##0.###} ms\r"))}");
+        return TypedResults.Text($"Maximum time for all tracing {Checking.CheckRoutes.OverallTimeoutSecs} secs.\n\n" +
+                                 $"\"{string.Join('\n', results.Select(result => $"{result.RouteName} - {result.CheckType} - {result.RouteUrl}  [{result.Elapsed.TotalMilliseconds:#,##0.###} ms]\n{string.Join('\n', result.ResponseResult.Split('\n').Select(x => $"{new string(' ', 15)}{x}"))}\n"))}\"");
     }
 
     private static async Task<IResult> CheckRoutesAsJson(CheckRoutes checkRoutes)
