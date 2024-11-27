@@ -63,9 +63,9 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
 
         try
         {
-            logger.Information("Start checking nslookup for {Url}", healthUrl.Url);
+            logger.Information("Start checking NSLOOKUP for {Url}", healthUrl.Url);
 
-            var processOutput = RunProcess("nslookup", healthUrl.Uri.Host);
+            var processOutput = RunProcess("NSLOOKUP", healthUrl.Uri.Host);
             checkRouteResult = checkRouteResult with { ResponseResult = $"{processOutput}", Elapsed = stopwatch.Elapsed };
         }
         catch (Exception ex)
@@ -74,7 +74,7 @@ public class CheckRoutes(IMessageRoutes messageRoutes, IHttpClientFactory client
         }
         
         stopwatch.Stop();
-        logger.Information("Completed checking nslookup for {Url} with result {Result}", healthUrl.Url, checkRouteResult.ResponseResult);
+        logger.Information("Completed checking NSLOOKUP for {Url} with result {Result}", healthUrl.Url, checkRouteResult.ResponseResult);
         
         return Task.FromResult(checkRouteResult);
     }
