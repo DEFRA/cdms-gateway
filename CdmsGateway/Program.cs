@@ -73,7 +73,7 @@ static Logger ConfigureLogging(WebApplicationBuilder builder)
         .Enrich.WithProperty("service.version", Environment.GetEnvironmentVariable("SERVICE_VERSION"))
         .WriteTo.OpenTelemetry(options =>
         {
-            options.Endpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+            options.LogsEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
             options.ResourceAttributes.Add("service.name", "cdms-gateway");
         });
     
