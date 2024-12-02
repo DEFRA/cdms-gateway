@@ -4,7 +4,7 @@ namespace CdmsGateway.Utils;
 
 public class MetricsHost
 {
-    public const string Name = "Cdms.Gateway";
+    public const string MeterName = "Cdms.Gateway";
 
     public readonly Counter<long> RequestRouted;
     public readonly Counter<long> RequestForked;
@@ -14,7 +14,7 @@ public class MetricsHost
 
     public MetricsHost(IMeterFactory meterFactory)
     {
-        var meter = meterFactory.Create(Name);
+        var meter = meterFactory.Create(MeterName);
         RequestRouted = meter.CreateCounter<long>("cdms.gateway.routed", "requests", "Number of routed requests made");
         RequestForked = meter.CreateCounter<long>("cdms.gateway.forked", "requests", "Number of forked requests made");
         TotalRequestDuration = meter.CreateHistogram<long>("cdms.gateway.duration.total", "ms", "Duration of routing from receiving request to returning routed response");
